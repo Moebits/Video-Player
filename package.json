@@ -1,0 +1,110 @@
+{
+  "name": "video-player",
+  "version": "0.0.1",
+  "description": "A video player with reversing and time stretching effects",
+  "main": "dist/main.js",
+  "scripts": {
+    "start": "npm run clean && webpack && electron dist/main.js",
+    "clean": "del-cli ./dist",
+    "build": "npm run clean ./build && webpack && electron-builder -p never",
+    "release": "npm run clean ./build && webpack && electron-builder -p always"
+  },
+  "keywords": [
+    "video",
+    "player",
+    "reverse",
+    "anime",
+    "cute"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tenpi/Video-Player"
+  },
+  "build": {
+    "appId": "com.tenpi.video-player",
+    "productName": "Video Player",
+    "icon": "./assets/icon.png",
+    "directories": {
+      "buildResources": "assets",
+      "output": "build"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "uninstallDisplayName": "Video Player",
+      "createDesktopShortcut": "always",
+      "installerSidebar": "./assets/installer.bmp",
+      "uninstallerSidebar": "./assets/installer.bmp"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "extraFiles": [
+      "ffmpeg/**/*"
+    ],
+    "publish": {
+      "provider": "github",
+      "repo": "Video-Player",
+      "owner": "Tenpi",
+      "releaseType": "draft"
+    },
+    "fileAssociations": [
+      {
+        "ext": "mp4",
+        "description": "MP4 File"
+      },
+      {
+        "ext": "mkv",
+        "description": "MKV File"
+      },
+      {
+        "ext": "mov",
+        "description": "MOV File"
+      },
+      {
+        "ext": "avi",
+        "description": "AVI File"
+      }
+    ]
+  },
+  "author": "Tenpi",
+  "license": "MIT",
+  "devDependencies": {
+    "@tenpi/tslint": "^1.1.0",
+    "@types/fluent-ffmpeg": "^2.1.18",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "css-loader": "^5.0.1",
+    "del-cli": "^3.0.1",
+    "electron": "^11.2.1",
+    "electron-builder": "^22.9.1",
+    "file-loader": "^6.2.0",
+    "fork-ts-checker-webpack-plugin": "^6.1.0",
+    "html-loader": "^1.3.2",
+    "html-webpack-plugin": "^4.5.1",
+    "less": "^4.1.0",
+    "less-loader": "^7.3.0",
+    "mini-css-extract-plugin": "^1.3.5",
+    "node-loader": "^1.0.2",
+    "terser-webpack-plugin": "^5.1.1",
+    "ts-loader": "^8.0.14",
+    "typescript": "^4.1.3",
+    "webpack": "^5.18.0",
+    "webpack-cli": "^4.4.0"
+  },
+  "dependencies": {
+    "bootstrap": "^4.6.0",
+    "electron-store": "^8.0.0",
+    "electron-updater": "^4.3.5",
+    "fluent-ffmpeg": "^2.1.2",
+    "rc-slider": "^9.7.1",
+    "react": "^17.0.1",
+    "react-bootstrap": "^1.4.3",
+    "react-dom": "^17.0.1"
+  }
+}
