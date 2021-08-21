@@ -1,0 +1,172 @@
+@import "../index.less";
+@import "./titlebar.less";
+
+.video-player {
+    padding-top: @title-bar-height;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+}
+
+.video {
+    width: 100vw;
+    height: calc(100vh - @title-bar-height);
+}
+
+.video-controls {
+    opacity: 0;
+    transition: opacity 0.5s;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 120px;
+    justify-content: center;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+.visible {
+    opacity: 1;
+}
+
+.control-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.control-text {
+    font-family: "Skranji", sans-serif;
+    font-size: 2.5vw;
+    user-select: text;
+    cursor: text;
+    color: white;
+}
+
+.control-button {
+    width: 30px;
+    cursor: pointer;
+    margin-left: 13px;
+}
+
+.next-button {
+    width: 25px;
+}
+
+.play-button {
+    width: 40px;
+}
+
+.progress-slider.rc-slider {
+    width: 80%;
+    border-radius: 0.2;
+    align-items: center;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.progress-slider > .rc-slider-rail {
+    height: 0.4rem;
+    background-color: black;
+    border-radius: 0.2;
+}
+
+.progress-slider > .rc-slider-track {
+    height: 0.4rem;
+    background-color: #991fbe;
+    border-radius: 0.2;
+}
+
+.progress-slider > .rc-slider-handle {
+    margin-top: -10px;
+    border: none;
+    height: 1.5rem;
+    width: 1.5rem;
+    &:active {
+        box-shadow: none;
+        filter: hue-rotate(60deg) // invert(1) hue-rotate(180deg) brightness(80%);
+    }
+    &:hover {
+        filter: hue-rotate(60deg) // invert(1) hue-rotate(180deg) brightness(80%);
+    }
+}
+
+.progress-slider > .rc-slider-handle {
+    content: url("../assets/icons/volume-thumb.png");
+    background-color: black;
+}
+
+.volume-slider.rc-slider {
+    margin-left: 7px;
+    width: 17%;
+    border-radius: 0.2;
+    align-items: center;
+}
+
+.volume-slider > .rc-slider-rail {
+    height: 0.3rem;
+    background-color: #000000;
+    border-radius: 0.2;
+}
+
+.volume-slider > .rc-slider-track {
+    height: 0.3rem;
+    background-color: #b432ff;
+    border-radius: 0.2;
+}
+
+.volume-slider > .rc-slider-handle {
+    border: none;
+    height: 1rem;
+    width: 1rem;
+    &:active {
+        box-shadow: none;
+        filter: hue-rotate(60deg) brightness(130%);
+    }
+    &:hover {
+        filter: hue-rotate(60deg) brightness(130%);
+    }
+}
+
+.volume-slider > .rc-slider-handle {
+    content: url("../assets/icons/volume-thumb.png");
+    background-color: black;
+}
+
+.speed-bar {
+    filter: hue-rotate(50deg) brightness(120%);
+}
+
+.speed-checkbox {
+    margin-left: 0.5rem;
+    filter: hue-rotate(50deg) brightness(120%);
+}
+
+.speed-text {
+    cursor: text;
+    color: white;
+    font-family: "Skranji", sans-serif;
+    font-size: 1rem;
+}
+
+.speed-popup-container {
+    position: relative;
+}
+
+.speed-popup {
+    position: absolute;
+    bottom: 1.3rem;
+    left: -2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.speed-checkbox-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
