@@ -106,34 +106,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 }
             }
         }
-        const keyDown = (event: KeyboardEvent) => {
-            if (event.shiftKey) {
-                event.preventDefault()
-                speedBar.current!.step = "0.01"
-            }
-
-            if (event.code === "Space") {
-                play()
-            }
-
-            if (event.key === "ArrowLeft") {
-                rewind()
-            }
-
-            if (event.key === "ArrowRight") {
-                fastforward()
-            }
-        }
-        const keyUp = (event: KeyboardEvent) => {
-            if (!event.shiftKey) {
-                if (Number(speedBar.current!.value) % 0.5 !== 0) speedBar.current!.value = String(functions.round(Number(speedBar.current!.value), 0.5))
-                speedBar.current!.step = "0.5"
-            }
-        }
-        const wheel = (event: WheelEvent) => {
-            const delta = Math.sign(event.deltaY)
-            volume(state.volume + delta * 0.01)
-        }
         const openLink = async (event: any, link: string) => {
             if (link) {
                 let video = link
@@ -148,17 +120,11 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         ipcRenderer.on("upload-file", uploadFile)
         ipcRenderer.on("open-link", openLink)
         window.addEventListener("click", onClick)
-        window.addEventListener("keydown", keyDown)
-        window.addEventListener("keyup", keyUp)
-        window.addEventListener("wheel", wheel)
         return () => {
             ipcRenderer.removeListener("open-file", openFile)
             ipcRenderer.removeListener("upload-file", uploadFile)
             ipcRenderer.removeListener("open-link", openLink)
             window.removeEventListener("click", onClick)
-            window.removeEventListener("keydown", keyDown)
-            window.removeEventListener("keyup", keyUp)
-            window.removeEventListener("wheel", wheel)
             window.clearInterval()
         }
     }, [])
@@ -234,14 +200,57 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         const triggerDownload = () => {
             download()
         }
+        const keyDown = (event: KeyboardEvent) => {
+            if (event.shiftKey) {
+                event.preventDefault()
+                speedBar.current!.step = "0.01"
+            }
+            if (event.code === "Space") {
+                event.preventDefault()
+                play()
+            }
+            if (event.key === "ArrowLeft") {
+                event.preventDefault()
+                rewind(1)
+            }
+            if (event.key === "ArrowRight") {
+                event.preventDefault()
+                fastforward(1)
+            }
+            if (event.key === "ArrowUp") {
+                event.preventDefault()
+                volume(state.volume + 0.05)
+            }
+            if (event.key === "ArrowDown") {
+                event.preventDefault()
+                volume(state.volume - 0.05)
+            }
+        }
+        const keyUp = (event: KeyboardEvent) => {
+            if (!event.shiftKey) {
+                if (Number(speedBar.current!.value) % 0.5 !== 0) speedBar.current!.value = String(functions.round(Number(speedBar.current!.value), 0.5))
+                speedBar.current!.step = "0.5"
+            }
+        }
+        const wheel = (event: WheelEvent) => {
+            event.preventDefault()
+            const delta = Math.sign(event.deltaY)
+            volume(state.volume - delta * 0.05)
+        }
         saveState()
         videoRef.current!.addEventListener("timeupdate", timeUpdate)
         videoRef.current!.addEventListener("ended", onEnd)
         ipcRenderer.on("trigger-download", triggerDownload)
+        window.addEventListener("keydown", keyDown)
+        window.addEventListener("keyup", keyUp)
+        window.addEventListener("wheel", wheel)
         return () => {
             videoRef.current!.removeEventListener("timeupdate", timeUpdate)
             videoRef.current!.removeEventListener("ended", onEnd)
             ipcRenderer.removeListener("trigger-download", triggerDownload)
+            window.removeEventListener("keydown", keyDown)
+            window.removeEventListener("keyup", keyUp)
+            window.removeEventListener("wheel", wheel)
         }
     })
 
@@ -375,6 +384,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const volume = (value: number) => {
+        if (value < 0) value = 0
+        if (value > 1) value = 1
         videoRef.current!.volume = value
         setState((prev) => {
             return {...prev, volume: value, prevVolume: value}
@@ -458,8 +469,9 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
     }
 
-    const rewind = () => {
-        let newTime = state.reverse ? videoRef.current!.currentTime + 10 : videoRef.current!.currentTime - 10
+    const rewind = (value?: number) => {
+        if (!value) value = 10
+        let newTime = state.reverse ? videoRef.current!.currentTime + value : videoRef.current!.currentTime - value
         if (newTime < 0) newTime = 0
         if (newTime > videoRef.current!.duration) newTime = videoRef.current!.duration
         videoRef.current!.currentTime = newTime
@@ -468,8 +480,9 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
     }
 
-    const fastforward = () => {
-        let newTime = state.reverse ? videoRef.current!.currentTime - 10 : videoRef.current!.currentTime + 10
+    const fastforward = (value?: number) => {
+        if (!value) value = 10
+        let newTime = state.reverse ? videoRef.current!.currentTime - value : videoRef.current!.currentTime + value
         if (newTime < 0) newTime = 0
         if (newTime > videoRef.current!.duration) newTime = videoRef.current!.duration
         videoRef.current!.currentTime = newTime
@@ -501,9 +514,17 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         let savePath = await ipcRenderer.invoke("save-dialog", defaultPath)
         if (!savePath) return
         if (!path.extname(savePath)) savePath += path.extname(defaultPath)
+        videoRef.current?.pause()
+        setState((prev) => {
+            return {...prev, paused: true}
+        })
         ipcRenderer.invoke("export-dialog", true)
         await ipcRenderer.invoke("export-video", state.forwardSrc, savePath, {reverse: state.reverse, speed: state.speed, preservesPitch: state.preservesPitch, abloop: state.abloop, loopStart: state.loopStart, loopEnd: state.loopEnd, duration: videoRef.current!.duration})
         ipcRenderer.invoke("export-dialog", false)
+        videoRef.current!.play()
+        setState((prev) => {
+            return {...prev, paused: false}
+        })
     }
 
     return (
