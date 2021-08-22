@@ -7,6 +7,7 @@ import process from "process"
 import "./dev-app-update.yml"
 import pack from "./package.json"
 import fs from "fs"
+import functions from "./structures/functions"
 
 process.setMaxListeners(0)
 let window: Electron.BrowserWindow | null
@@ -15,6 +16,11 @@ if (!fs.existsSync(ffmpegPath)) ffmpegPath = undefined
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
 const store = new Store()
+
+ipcMain.handle("reverse-dialog", async (event, visible: boolean) => {
+  window?.webContents.send("close-all-dialogs", "reverse")
+  window?.webContents.send("show-reverse-dialog", visible)
+})
 
 ipcMain.handle("get-state", () => {
   return store.get("state", {})
@@ -30,22 +36,94 @@ ipcMain.handle("upload-file", () => {
   window?.webContents.send("upload-file")
 })
 
-ipcMain.handle("reverse-video", async (event, videoFile) => {
-    const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
-    const ext = path.extname(videoFile)
-    const name = path.basename(videoFile, ext)
-    const vidDest = path.join(__dirname, `assets/videos`)
+ipcMain.handle("extract-subtitles", async (event, videoFile) => {
+    const name = path.basename(videoFile, path.extname(videoFile))
+    const vidDest = path.join(__dirname, `assets/subtitles`)
     if (!fs.existsSync(vidDest)) fs.mkdirSync(vidDest, {recursive: true})
-    const newDest = path.join(vidDest, `./${name}_reverse${ext}`)
+    const newDest = path.join(vidDest, `./${name}.vtt`)
     if (fs.existsSync(newDest)) return newDest
-    await new Promise<void>((resolve) => {
-        ffmpeg(videoFile).outputOptions([...baseFlags, "-vf", "reverse", "-af", "areverse"])
+    return new Promise<string>((resolve, reject) => {
+        ffmpeg(videoFile)
         .save(newDest)
+        .on("end", () => {
+            resolve(newDest)
+        })
+        .on("error", () => reject())
+    }).catch(() => "")
+})
+
+const splitVideo = async (videoFile: string, savePath: string) => {
+  const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+  await new Promise<void>((resolve) => {
+    ffmpeg(videoFile).outputOptions([...baseFlags, "-acodec", "copy", "-vcodec", "copy", "-f", "segment", "-segment_time", "10", "-reset_timestamps", "1", "-map", "0"])
+        .save(savePath)
         .on("end", () => {
             resolve()
         })
+  })
+  return fs.readdirSync(path.dirname(savePath), {withFileTypes: true}).filter((p) => p.isFile()).map((p) => `${path.dirname(savePath)}/${p.name}`)
+}
+
+const reverseSegments = async (segments: string[], savePath: string) => {
+  const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+  let queue: string[][] = []
+  const total = segments.length
+  while (segments.length) queue.push(segments.splice(0, 2))
+  let counter = 0
+  for (let i = 0; i < queue.length; i++) {
+    window?.webContents.send("reverse-progress", {current: counter, total})
+    await Promise.all(queue[i].map(async (f) => {
+      counter++
+      return new Promise<void>((resolve) => {
+        ffmpeg(f).outputOptions([...baseFlags, "-vf", "reverse", "-af", "areverse"])
+        .save(`${savePath}/${path.basename(f)}`)
+        .on("end", () => {
+            resolve()
+        })
+      })
+    }))
+  }
+  return fs.readdirSync(savePath, {withFileTypes: true}).filter((p) => p.isFile()).map((p) => `${savePath}/${p.name}`)
+}
+
+const concatSegments = async (segments: string[], savePath: string) => {
+  const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+  const sorted = segments.sort(new Intl.Collator(undefined, {numeric: true, sensitivity: "base"}).compare).reverse()
+  const text = sorted.map((s) => `file '${s}'`).join("\n")
+  const textPath = `${path.dirname(savePath)}/list.txt`
+  fs.writeFileSync(textPath, text)
+  await new Promise<void>((resolve) => {
+    ffmpeg(textPath)
+    .inputOptions(["-f", "concat", "-safe", "0"])
+    .outputOptions([...baseFlags, "-c", "copy"])
+    .save(savePath)
+    .on("end", () => {
+        resolve()
     })
-    return newDest
+  })
+  return savePath
+}
+
+ipcMain.handle("get-reverse-src", async (event, videoFile: string) => {
+  const ext = path.extname(videoFile)
+  const name = path.basename(videoFile, ext)
+  const vidDest = path.join(__dirname, `assets/videos/`)
+  const newDest = path.join(vidDest, `./${name}_reverse${ext}`)
+  if (fs.existsSync(newDest)) return newDest
+  return null
+})
+
+ipcMain.handle("reverse-video", async (event, videoFile: string) => {
+    const ext = path.extname(videoFile)
+    const name = path.basename(videoFile, ext)
+    const vidDest = path.join(__dirname, `assets/videos/`)
+    const newDest = path.join(vidDest, `./${name}_reverse${ext}`)
+    if (!fs.existsSync(`${vidDest}/segments/reversed`)) fs.mkdirSync(`${vidDest}/segments/reversed`, {recursive: true})
+    const segments = await splitVideo(videoFile, `${vidDest}/segments/seg%d${ext}`)
+    const reversedSegments = await reverseSegments(segments, `${vidDest}/segments/reversed`)
+    const reverseFile = await concatSegments(reversedSegments, newDest)
+    functions.removeDirectory(`${vidDest}/segments`)
+    return reverseFile
 })
 
 ipcMain.handle("select-file", async () => {
@@ -59,6 +137,15 @@ ipcMain.handle("select-file", async () => {
   })
   return files.filePaths[0] ? files.filePaths[0] : null
 })
+
+ipcMain.handle("get-theme", () => {
+  return store.get("theme", "light")
+})
+
+ipcMain.handle("save-theme", (event, theme: string) => {
+  store.set("theme", theme)
+})
+
 
 ipcMain.handle("install-update", async (event) => {
   await autoUpdater.downloadUpdate()
@@ -99,7 +186,7 @@ if (!singleLock) {
   })
 
   app.on("ready", () => {
-    window = new BrowserWindow({width: 900, height: 650, minWidth: 720, minHeight: 450, frame: false, backgroundColor: "#f53171", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
+    window = new BrowserWindow({width: 900, height: 650, minWidth: 720, minHeight: 450, frame: false, backgroundColor: "#7d47c9", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
     window.loadFile(path.join(__dirname, "index.html"))
     window.removeMenu()
     openFile()

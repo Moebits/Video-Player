@@ -27,6 +27,7 @@ import resetButton from "../assets/icons/clear.png"
 import resetButtonHover from "../assets/icons/clear-hover.png"
 import subtitleButton from "../assets/icons/sub.png"
 import subtitleButtonHover from "../assets/icons/sub-hover.png"
+import subtitleButtonActive from "../assets/icons/sub-active.png"
 import fullscreenButton from "../assets/icons/fullscreen.png"
 import fullscreenButtonHover from "../assets/icons/fullscreen-hover.png"
 import volumeButton from "../assets/icons/volume.png"
@@ -35,19 +36,24 @@ import volumeLowButton from "../assets/icons/volume-low.png"
 import volumeLowButtonHover from "../assets/icons/volume-low-hover.png"
 import muteButton from "../assets/icons/mute.png"
 import muteButtonHover from "../assets/icons/mute-hover.png"
+import rewindButton from "../assets/icons/rewind.png"
+import rewindButtonHover from "../assets/icons/rewind-hover.png"
+import fastForwardButton from "../assets/icons/fastforward.png"
+import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
 import "../styles/videoplayer.less"
 
 const videoExtensions = [".mp4", ".mov", ".avi", ".flv", ".mkv", ".webm"]
 
 const VideoPlayer: React.FunctionComponent = (props) => {
+    const playerRef = useRef(null) as React.RefObject<HTMLDivElement>
     const videoRef = useRef(null) as React.RefObject<HTMLVideoElement>
     const speedBar = useRef(null) as React.RefObject<HTMLInputElement>
     const speedPopup = useRef(null) as React.RefObject<HTMLDivElement>
     const speedImg = useRef(null) as React.RefObject<HTMLImageElement>
     const [hover, setHover] = useState(false)
     const [playHover, setPlayHover] = useState(false)
-    const [nextHover, setNextHover] = useState(false)
-    const [previousHover, setPreviousHover] = useState(false)
+    const [fastForwardHover, setFastforwardHover] = useState(false)
+    const [rewindHover, setRewindHover] = useState(false)
     const [reverseHover, setReverseHover] = useState(false)
     const [speedHover, setSpeedHover] = useState(false)
     const [loopHover, setLoopHover] = useState(false)
@@ -60,6 +66,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const initialState = {
         forwardSrc: null as any,
         reverseSrc: null as any,
+        subtitleSrc: null as any,
         reverse: false,
         speed: 1,
         preservesPitch: true,
@@ -68,10 +75,11 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         prevVolume: 1,
         volume: 1,
         paused: false,
+        subtitles: false,
         loop: false,
         abloop: false,
         loopStart: 0,
-        loopEnd: 0
+        loopEnd: 100
     }
 
     const [state, setState] = useState(initialState)
@@ -87,17 +95,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         }
         const uploadFile = () => {
             upload()
-        }
-        const timeUpdate = () => {
-            let progress = 0
-            let duration = 0
-            if (videoRef.current) {
-                progress = videoRef.current.currentTime / videoRef.current.playbackRate
-                duration =videoRef.current.duration / videoRef.current.playbackRate
-            }
-            setState((prev) => {
-                return {...prev, progress, duration}
-            })
         }
         const onClick = (event: any) => {
             if (speedPopup.current?.style.display === "flex") {
@@ -119,7 +116,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             }
         }
         initState()
-        videoRef.current!.addEventListener("timeupdate", timeUpdate)
         ipcRenderer.on("open-file", openFile)
         ipcRenderer.on("upload-file", uploadFile)
         window.addEventListener("click", onClick)
@@ -128,7 +124,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         return () => {
             ipcRenderer.removeListener("open-file", openFile)
             ipcRenderer.removeListener("upload-file", uploadFile)
-            videoRef.current!.removeEventListener("timeupdate", timeUpdate)
             window.removeEventListener("click", onClick)
             window.removeEventListener("keydown", keyDown)
             window.removeEventListener("keyup", keyUp)
@@ -152,15 +147,71 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             newState = {...newState, loop: saved.loop}
             videoRef.current!.loop = saved.loop
         }
+        setState((prev) => {
+            return {...prev, ...newState}
+        })
     }
 
     useEffect(() => {
+        const timeUpdate = () => {
+            let progress = 0
+            let duration = 0
+            if (videoRef.current) {
+                progress = videoRef.current.currentTime / videoRef.current.playbackRate
+                duration = videoRef.current.duration / videoRef.current.playbackRate
+                if (state.abloop) {
+                    const current = videoRef.current.currentTime
+                    const start = state.reverse ? (videoRef.current.duration / 100) * (100 - state.loopStart) : (videoRef.current.duration / 100) * state.loopStart
+                    const end = state.reverse ? (videoRef.current.duration / 100) * (100 - state.loopEnd) : (videoRef.current.duration / 100) * state.loopEnd
+                    if (state.reverse) {
+                        if (current > start || current < end) {
+                            videoRef.current.currentTime = end
+                            setState((prev) => {
+                                return {...prev, progress: end}
+                            })
+                        }
+                    } else {
+                        if (current < start || current > end) {
+                            videoRef.current.currentTime = start
+                            setState((prev) => {
+                                return {...prev, progress: start}
+                            })
+                        }
+                    }
+                }
+            }
+            setState((prev) => {
+                return {...prev, progress, duration}
+            })
+        }
+        if (state.subtitles) {
+            videoRef.current!.textTracks[0].mode = "showing"
+        } else {
+            videoRef.current!.textTracks[0].mode = "hidden"
+        }
+        if (hover) {
+            document.documentElement.style.setProperty("--subtitle-transform", "translateY(-80px)")
+        } else {
+            document.documentElement.style.setProperty("--subtitle-transform", "translateY(0)")
+        }
+        const onEnd = () => {
+            setState((prev) => {
+                return {...prev, paused: true}
+            })
+        }
         saveState()
+        videoRef.current!.addEventListener("timeupdate", timeUpdate)
+        videoRef.current!.addEventListener("ended", onEnd)
+        return () => {
+            videoRef.current!.removeEventListener("timeupdate", timeUpdate)
+            videoRef.current!.removeEventListener("ended", onEnd)
+        }
     })
 
     const refreshState = () => {
         speed(state.speed)
         preservesPitch(state.preservesPitch)
+        if (state.abloop) abloop([state.loopStart, state.loopEnd])
     }
 
     const saveState = () => {
@@ -170,20 +221,27 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const upload = async (file?: string) => {
         if (!file) file = await ipcRenderer.invoke("select-file")
         if (!file) return
+        console.log(file)
         if (!videoExtensions.includes(path.extname(file))) return
-        state.forwardSrc = file
-        state.reverseSrc = null
-        state.reverse = false
-        videoRef.current!.src = state.forwardSrc
+        videoRef.current!.src = file
         videoRef.current!.currentTime = 0
         videoRef.current!.play()
         setState((prev) => {
-            return {...prev, paused: false}
+            return {...prev, forwardSrc: file, reverseSrc: null, reverse: false, paused: false}
         })
         refreshState()
-        /*ipcRenderer.invoke("reverse-video", file).then((reversed) => {
-            state.reverseSrc = reversed
-        })*/
+        ipcRenderer.invoke("extract-subtitles", file).then((subtitles) => {
+            setState((prev) => {
+                return {...prev, subtitleSrc: subtitles}
+            })
+        })
+        ipcRenderer.invoke("get-reverse-src", file).then((reverseSrc) => {
+            if (reverseSrc) {
+                setState((prev) => {
+                    return {...prev, reverseSrc}
+                })
+            }
+        })
     }
 
     const play = () => {
@@ -200,8 +258,30 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         }
     }
 
-    const reverse = () => {
-        if (!state.reverseSrc) return
+    const reverse = async () => {
+        if (!state.reverseSrc) {
+            videoRef.current?.pause()
+            setState((prev) => {
+                return {...prev, paused: true}
+            })
+            ipcRenderer.invoke("reverse-dialog", true)
+            await new Promise<void>((resolve) => {
+                ipcRenderer.invoke("reverse-video", state.forwardSrc).then((reversed) => {
+                    ipcRenderer.invoke("reverse-dialog", false)
+                    let percent = videoRef.current!.currentTime / videoRef.current!.duration
+                    const newTime = (1-percent) * videoRef.current!.duration
+                    videoRef.current!.src = reversed
+                    videoRef.current!.currentTime = newTime
+                    videoRef.current!.play()
+                    refreshState()
+                    setState((prev) => {
+                        return {...prev, reverseSrc: reversed, reverse: true, paused: false}
+                    })
+                    resolve()
+                })
+            })
+            return
+        }
         if (state.reverse) {
             let percent = videoRef.current!.currentTime / videoRef.current!.duration
             const newTime = (1-percent) * videoRef.current!.duration
@@ -223,6 +303,9 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 return {...prev, reverse: true}
             })
         }
+        setState((prev) => {
+            return {...prev, paused: false}
+        })
     }
 
     const speed = (value?: number | string) => {
@@ -242,7 +325,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const seek = (position: number) => {
-        const progress = (state.duration / 100) * position
+        const progress = state.reverse ? (videoRef.current!.duration / 100) * (100 - position) : (videoRef.current!.duration / 100) * position
         videoRef.current!.currentTime = progress
         setState((prev) => {
             return {...prev, progress}
@@ -285,7 +368,11 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const fullscreen = () => {
-        videoRef.current!.requestFullscreen()
+        if (document.fullscreenElement) {
+            document.exitFullscreen()
+        } else {
+            playerRef.current!.requestFullscreen()
+        }
     }
 
     const loop = (value?: boolean) => {
@@ -297,7 +384,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const reset = () => {
-        const {forwardSrc, reverseSrc, volume, prevVolume} = state
+        const {forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume} = state
         videoRef.current!.playbackRate = 1
         // @ts-ignore
         videoRef.current!.preservesPitch = true
@@ -306,45 +393,81 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         videoRef.current!.play()
         setState(initialState)
         setState((prev) => {
-            return {...prev, forwardSrc, reverseSrc, volume, prevVolume}
+            return {...prev, forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume}
+        })
+    }
+
+    const subtitles = () => {
+        setState((prev) => {
+            return {...prev, subtitles: !prev.subtitles}
+        })
+    }
+
+    const abloop = (value: number[]) => {
+        setState((prev) => {
+            return {...prev, loopStart: value[0], loopEnd: value[1]}
+        })
+    }
+
+    const toggleAB = (value?: boolean) => {
+        const abloop = value !== undefined ? value : !state.abloop
+        setState((prev) => {
+            return {...prev, abloop}
+        })
+    }
+
+    const rewind = () => {
+        let newTime = state.reverse ? videoRef.current!.currentTime + 10 : videoRef.current!.currentTime - 10
+        if (newTime < 0) newTime = 0
+        if (newTime > videoRef.current!.duration) newTime = videoRef.current!.duration
+        videoRef.current!.currentTime = newTime
+        setState((prev) => {
+            return {...prev, progress: newTime}
+        })
+    }
+
+    const fastforward = () => {
+        let newTime = state.reverse ? videoRef.current!.currentTime - 10 : videoRef.current!.currentTime + 10
+        if (newTime < 0) newTime = 0
+        if (newTime > videoRef.current!.duration) newTime = videoRef.current!.duration
+        videoRef.current!.currentTime = newTime
+        setState((prev) => {
+            return {...prev, progress: newTime}
         })
     }
 
     return (
-        <main className="video-player">
-            <video className="video" ref={videoRef}></video>
-            {/* 
-            <button onClick={() => upload()}>Upload</button>
-            <button onClick={() => play()} ref={playButton}>Pause</button>
-            <button onClick={() => reverse()}>Reverse</button>
-            <input type="range" ref={speedBar} onChange={(event) => speed(event.target.value)} min="0.5" max="4" step="0.5" defaultValue="1" className="speed-bar"/>
-            <div className="speed-checkbox-container">
-            <p className="speed-text">Pitch?</p><input type="checkbox" ref={speedCheckbox} onChange={() => preservesPitch()} className="speed-checkbox"/>
-            </div>*/}
+        <main className="video-player" ref={playerRef}>
+            <video className="video" ref={videoRef}>
+                <track kind="subtitles" src={state.subtitleSrc}></track>
+            </video>
             <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                 <div className="control-row">
-                    <p className="control-text">{functions.formatSeconds(state.progress)}</p>
-                    <Slider className="progress-slider" onChange={(value) => seek(value)} min={0} max={100} step={1} value={state.progress / state.duration * 100}/>
+                    <p className="control-text">{functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
+                    <div className="progress-container">
+                        <Slider className="progress-slider" onChange={(value) => seek(value)} min={0} max={100} step={1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
+                        <Slider.Range className="ab-slider" min={0} max={100} value={[state.loopStart, state.loopEnd]} onChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
+                    </div>
                     <p className="control-text">{functions.formatSeconds(state.duration)}</p>
                 </div>
                 <div className="control-row">
-                    <img className="control-button" src={reverseHover ? reverseButtonHover : reverseButton} onClick={() => reverse()} onMouseEnter={() => setReverseHover(true)} onMouseLeave={() => setReverseHover(false)}/>
+                    <img className="control-button" src={reverseHover ? reverseButtonHover : (state.reverse ? reverseActiveButton : reverseButton)} onClick={() => reverse()} onMouseEnter={() => setReverseHover(true)} onMouseLeave={() => setReverseHover(false)}/>
                     <div className="speed-popup-container" ref={speedPopup} style={({display: "none"})}>
                             <div className="speed-popup">
                                 <input type="range" ref={speedBar} onChange={(event) => speed(event.target.value)} min="0.5" max="4" step="0.5" value={state.speed} className="speed-bar"/>
                                 <div className="speed-checkbox-container">
                                 <p className="speed-text">Pitch?</p><input type="checkbox" checked={!state.preservesPitch} onChange={() => preservesPitch()} className="speed-checkbox"/>
-                                </div>       
+                                </div>
                             </div>
                         </div>
                     <img className="control-button" src={speedHover ? speedButtonHover : (state.speed !== 1 ? speedActiveButton : speedButton)} ref={speedImg} onClick={() => speedPopup.current!.style.display === "flex" ? speedPopup.current!.style.display = "none" : speedPopup.current!.style.display = "flex"} onMouseEnter={() => setSpeedHover(true)} onMouseLeave={() => setSpeedHover(false)}/>
                     <img className="control-button" src={loopHover ? loopButtonHover : (state.loop ? loopActiveButton : loopButton)} onClick={() => loop()} onMouseEnter={() => setLoopHover(true)} onMouseLeave={() => setLoopHover(false)}/>
-                    <img className="control-button" src={abloopHover ? abloopButtonHover : abloopButton} onMouseEnter={() => setABLoopHover(true)} onMouseLeave={() => setABLoopHover(false)}/>
+                    <img className="control-button" src={abloopHover ? abloopButtonHover : (state.abloop ? abloopActiveButton : abloopButton)} onClick={() => toggleAB()} onMouseEnter={() => setABLoopHover(true)} onMouseLeave={() => setABLoopHover(false)}/>
                     <img className="control-button" src={resetHover ? resetButtonHover : resetButton} onClick={() => reset()} onMouseEnter={() => setResetHover(true)} onMouseLeave={() => setResetHover(false)}/>
-                    <img className="control-button next-button" src={previousHover ? previousButtonHover : previousButton} onMouseEnter={() => setPreviousHover(true)} onMouseLeave={() => setPreviousHover(false)}/>
+                    <img className="control-button rewind-button" src={rewindHover ? rewindButtonHover : rewindButton} onClick={() => rewind()} onMouseEnter={() => setRewindHover(true)} onMouseLeave={() => setRewindHover(false)}/>
                     <img className="control-button play-button" src={playHover ? (state.paused ? playButtonHover : pauseButtonHover) : (state.paused ? playButton : pauseButton)} onClick={() => play()} onMouseEnter={() => setPlayHover(true)} onMouseLeave={() => setPlayHover(false)}/>
-                    <img className="control-button next-button" src={nextHover ? nextButtonHover : nextButton} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
-                    <img className="control-button" src={subtitleHover ? subtitleButtonHover : subtitleButton} onMouseEnter={() => setSubtitleHover(true)} onMouseLeave={() => setSubtitleHover(false)}/>
+                    <img className="control-button rewind-button" src={fastForwardHover ? fastForwardButtonHover : fastForwardButton} onClick={() => fastforward()} onMouseEnter={() => setFastforwardHover(true)} onMouseLeave={() => setFastforwardHover(false)}/>
+                    <img className="control-button" src={subtitleHover ? subtitleButtonHover : (state.subtitles ? subtitleButtonActive : subtitleButton)} onClick={() => subtitles()} onMouseEnter={() => setSubtitleHover(true)} onMouseLeave={() => setSubtitleHover(false)}/>
                     <img className="control-button" src={fullscreenHover ? fullscreenButtonHover : fullscreenButton} onClick={() => fullscreen()} onMouseEnter={() => setFullscreenHover(true)} onMouseLeave={() => setFullscreenHover(false)}/>
                     <img className="control-button" src={volumeIcon()} onClick={() => mute()} onMouseEnter={() => setVolumeHover(true)} onMouseLeave={() => setVolumeHover(false)}/>
                     <Slider className="volume-slider" onChange={(value) => volume(value)} min={0} max={1} step={0.01} value={state.volume}/>
