@@ -61,7 +61,7 @@ ipcMain.handle("upload-file", () => {
 ipcMain.handle("extract-subtitles", async (event, videoFile) => {
     if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
     const name = path.basename(videoFile, path.extname(videoFile))
-    const vidDest = path.join(app.getAppPath(), `assets/subtitles`)
+    const vidDest = path.join(app.getAppPath(), `../assets/subtitles`)
     if (!fs.existsSync(vidDest)) fs.mkdirSync(vidDest, {recursive: true})
     const newDest = path.join(vidDest, `./${name}.vtt`)
     return new Promise<string>((resolve, reject) => {
@@ -129,7 +129,7 @@ const concatSegments = async (segments: string[], savePath: string) => {
 ipcMain.handle("get-reverse-src", async (event, videoFile: string) => {
   const ext = path.extname(videoFile)
   const name = path.basename(videoFile, ext)
-  const vidDest = path.join(app.getAppPath(), `assets/videos/`)
+  const vidDest = path.join(app.getAppPath(), `../assets/videos/`)
   const newDest = path.join(vidDest, `./${name}_reverse${ext}`)
   if (fs.existsSync(newDest)) return newDest
   return null
@@ -139,7 +139,7 @@ ipcMain.handle("reverse-video", async (event, videoFile: string) => {
     if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
     const ext = path.extname(videoFile)
     const name = path.basename(videoFile, ext)
-    const vidDest = path.join(app.getAppPath(), `assets/videos/`)
+    const vidDest = path.join(app.getAppPath(), `../assets/videos/`)
     const newDest = path.join(vidDest, `./${name}_reverse${ext}`)
     if (!fs.existsSync(`${vidDest}/segments/reversed`)) fs.mkdirSync(`${vidDest}/segments/reversed`, {recursive: true})
     const segments = await splitVideo(videoFile, `${vidDest}/segments/seg%d${ext}`)
