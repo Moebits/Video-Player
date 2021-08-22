@@ -241,3 +241,40 @@ video::-webkit-media-text-track-container {
     transition: transform 0.7s;
     transform: var(--subtitle-transform);
 }
+
+.left-bar {
+    opacity: 0;
+    position: absolute;
+    left: 0;
+    padding-left: 10px;
+    padding-right: 20px;
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.5s;
+    height: 90%;
+    justify-content: center;
+    z-index: 600;
+}
+
+.right-bar {
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    display: flex;
+    padding-right: 10px;
+    padding-left: 20px;
+    flex-direction: column;
+    transition: opacity 0.5s;
+    height: 90%;
+    justify-content: center;
+    z-index: 600;
+}
+
+.visible {
+    opacity: 1;
+}
+
+.bar-button {
+    cursor: pointer;
+    width: 35px;
+}

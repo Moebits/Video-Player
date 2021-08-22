@@ -17,6 +17,28 @@ if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
 const store = new Store()
 
+ipcMain.handle("next", async (event, videoFile: string) => {
+  if (videoFile.includes("file:///")) videoFile = videoFile.replace("file:///", "")
+  const directory = path.dirname(videoFile)
+  const files = await functions.getSortedFiles(directory)
+  const index = files.findIndex((f) => f === path.basename(videoFile))
+  if (index !== -1) {
+    if (files[index + 1]) return `file:///${directory}/${files[index + 1]}`
+  }
+  return null
+})
+
+ipcMain.handle("previous", async (event, videoFile: string) => {
+  if (videoFile.includes("file:///")) videoFile = videoFile.replace("file:///", "")
+  const directory = path.dirname(videoFile)
+  const files = await functions.getSortedFiles(directory)
+  const index = files.findIndex((f) => f === path.basename(videoFile))
+  if (index !== -1) {
+    if (files[index - 1]) return `file:///${directory}/${files[index - 1]}`
+  }
+  return null
+})
+
 ipcMain.handle("reverse-dialog", async (event, visible: boolean) => {
   window?.webContents.send("close-all-dialogs", "reverse")
   window?.webContents.send("show-reverse-dialog", visible)
@@ -37,6 +59,7 @@ ipcMain.handle("upload-file", () => {
 })
 
 ipcMain.handle("extract-subtitles", async (event, videoFile) => {
+    if (videoFile.includes("file:///")) videoFile = videoFile.replace("file:///", "")
     const name = path.basename(videoFile, path.extname(videoFile))
     const vidDest = path.join(__dirname, `assets/subtitles`)
     if (!fs.existsSync(vidDest)) fs.mkdirSync(vidDest, {recursive: true})
@@ -105,6 +128,7 @@ const concatSegments = async (segments: string[], savePath: string) => {
 }
 
 ipcMain.handle("get-reverse-src", async (event, videoFile: string) => {
+  if (videoFile.includes("file:///")) videoFile = videoFile.replace("file:///", "")
   const ext = path.extname(videoFile)
   const name = path.basename(videoFile, ext)
   const vidDest = path.join(__dirname, `assets/videos/`)
@@ -114,6 +138,7 @@ ipcMain.handle("get-reverse-src", async (event, videoFile: string) => {
 })
 
 ipcMain.handle("reverse-video", async (event, videoFile: string) => {
+    if (videoFile.includes("file:///")) videoFile = videoFile.replace("file:///", "")
     const ext = path.extname(videoFile)
     const name = path.basename(videoFile, ext)
     const vidDest = path.join(__dirname, `assets/videos/`)

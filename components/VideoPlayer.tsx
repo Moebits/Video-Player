@@ -51,6 +51,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const speedPopup = useRef(null) as React.RefObject<HTMLDivElement>
     const speedImg = useRef(null) as React.RefObject<HTMLImageElement>
     const [hover, setHover] = useState(false)
+    const [hoverBar, setHoverBar] = useState(false)
     const [playHover, setPlayHover] = useState(false)
     const [fastForwardHover, setFastforwardHover] = useState(false)
     const [rewindHover, setRewindHover] = useState(false)
@@ -62,6 +63,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const [subtitleHover, setSubtitleHover] = useState(false)
     const [volumeHover, setVolumeHover] = useState(false)
     const [fullscreenHover, setFullscreenHover] = useState(false)
+    const [nextHover, setNextHover] = useState(false)
+    const [previousHover, setPreviousHover] = useState(false)
 
     const initialState = {
         forwardSrc: null as any,
@@ -221,7 +224,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const upload = async (file?: string) => {
         if (!file) file = await ipcRenderer.invoke("select-file")
         if (!file) return
-        console.log(file)
         if (!videoExtensions.includes(path.extname(file))) return
         videoRef.current!.src = file
         videoRef.current!.currentTime = 0
@@ -231,9 +233,15 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
         refreshState()
         ipcRenderer.invoke("extract-subtitles", file).then((subtitles) => {
-            setState((prev) => {
-                return {...prev, subtitleSrc: subtitles}
-            })
+            if (subtitles) {
+                setState((prev) => {
+                    return {...prev, subtitleSrc: subtitles}
+                })
+            } else {
+                setState((prev) => {
+                    return {...prev, subtitles: false}
+                })
+            }
         })
         ipcRenderer.invoke("get-reverse-src", file).then((reverseSrc) => {
             if (reverseSrc) {
@@ -436,8 +444,24 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
     }
 
+    const next = async () => {
+        const nextFile = await ipcRenderer.invoke("next", state.forwardSrc)
+        if (nextFile) upload(nextFile)
+    }
+
+    const previous = async () => {
+        const previousFile = await ipcRenderer.invoke("previous", state.forwardSrc)
+        if (previousFile) upload(previousFile)
+    }
+
     return (
         <main className="video-player" ref={playerRef}>
+            <div className={hoverBar ? "left-bar visible" : "left-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
+                <img className="bar-button" src={previousHover ? previousButtonHover : previousButton} onClick={() => previous()} onMouseEnter={() => setPreviousHover(true)} onMouseLeave={() => setPreviousHover(false)}/>
+            </div>
+            <div className={hoverBar ? "right-bar visible" : "right-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
+                <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
+            </div>
             <video className="video" ref={videoRef}>
                 <track kind="subtitles" src={state.subtitleSrc}></track>
             </video>

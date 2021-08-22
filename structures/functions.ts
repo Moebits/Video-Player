@@ -1,6 +1,8 @@
 import fs from "fs"
 import path from "path"
 
+const videoExtensions = [".mp4", ".mov", ".avi", ".flv", ".mkv", ".webm"]
+
 export default class Functions {
     public static arrayIncludes = (str: string, arr: string[]) => {
         for (let i = 0; i < arr.length; i++) {
@@ -101,5 +103,17 @@ export default class Functions {
         // @ts-ignore
         blob.name = name
         return blob as File
+    }
+
+    public static getSortedFiles = async (dir: string) => {
+        const files = await fs.promises.readdir(dir)
+        return files
+            .filter((f) => videoExtensions.includes(path.extname(f)))
+            .map(fileName => ({
+                name: fileName,
+                time: fs.statSync(`${dir}/${fileName}`).mtime.getTime(),
+            }))
+            .sort((a, b) => b.time - a.time)
+            .map(file => file.name)
     }
 }
