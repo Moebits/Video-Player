@@ -1,6 +1,7 @@
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain, shell} from "electron"
 import {autoUpdater} from "electron-updater"
 import Store from "electron-store"
+import * as localShortcut from "electron-shortcuts"
 import path from "path"
 import ffmpeg from "fluent-ffmpeg"
 import process from "process"
@@ -8,6 +9,7 @@ import "./dev-app-update.yml"
 import pack from "./package.json"
 import fs from "fs"
 import functions from "./structures/functions"
+import Youtube from "youtube.ts"
 
 process.setMaxListeners(0)
 let window: Electron.BrowserWindow | null
@@ -16,8 +18,71 @@ if (!fs.existsSync(ffmpegPath)) ffmpegPath = undefined
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
 const store = new Store()
+const youtube = new Youtube()
+
+ipcMain.handle("export-video", async (event, videoFile: string, savePath: string, options: any) => {
+  let {reverse, speed, preservesPitch, abloop, loopStart, loopEnd, duration} = options
+  if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
+  const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+  let audioSpeed = preservesPitch ? `atempo=${speed}` : `asetrate=44100*${speed},aresample=44100`
+  let filter = ["-filter_complex", `[0:v]setpts=${1.0/speed}*PTS${reverse ? ",reverse": ""}[v];[0:a]${audioSpeed}${reverse ? ",areverse" : ""}[a]`, "-map", "[v]", "-map", "[a]"]
+  let segment = [] as string[]
+  duration /= speed
+  if (abloop) {
+    const start = reverse ? (duration / 100) * (100 - loopStart) : (duration / 100) * loopStart
+    const end = reverse ? (duration / 100) * (100 - loopEnd) : (duration / 100) * loopEnd
+    segment = ["-ss", `${reverse ? functions.formatSeconds(end) : functions.formatSeconds(start)}`, "-to", `${reverse ? functions.formatSeconds(start) : functions.formatSeconds(end)}`]
+    duration = reverse ? start - end : end - start
+  }
+  await new Promise<void>((resolve) => {
+    ffmpeg(videoFile)
+    .outputOptions([...baseFlags, ...segment, ...filter])
+    .save(savePath)
+    .on("end", () => {
+        resolve()
+    })
+    .on("progress", (progress) => {
+      window?.webContents.send("export-progress", {...progress, duration})
+    })
+  })
+})
+
+ipcMain.handle("save-dialog", async (event, defaultPath: string) => {
+  if (!window) return
+  const save = await dialog.showSaveDialog(window, {
+    defaultPath,
+    filters: [
+      {name: "All Files", extensions: ["*"]},
+      {name: "MP4", extensions: ["mp4"]},
+      {name: "MKV", extensions: ["mkv"]},
+      {name: "MOV", extensions: ["mov"]},
+      {name: "AVI", extensions: ["avi"]},
+      {name: "WEBM", extensions: ["webm"]}
+    ],
+    properties: ["createDirectory"]
+  })
+  return save.filePath ? save.filePath : null
+})
+
+ipcMain.handle("trigger-download", async (event, link: string) => {
+  window?.webContents.send("trigger-download", link)
+})
+
+ipcMain.handle("download-yt-video", async (event, link: string) => {
+  return youtube.util.downloadVideo(link, path.join(app.getAppPath(), "../assets/videos"), {format: "mp4"})
+})
+
+ipcMain.handle("open-link", async (event, link: string) => {
+  window?.webContents.send("open-link", link)
+})
+
+ipcMain.handle("show-link-dialog", async (event) => {
+  window?.webContents.send("close-all-dialogs", "link")
+  window?.webContents.send("show-link-dialog")
+})
 
 ipcMain.handle("next", async (event, videoFile: string) => {
+  if (videoFile.startsWith("http")) return
   if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
   const directory = path.dirname(videoFile)
   const files = await functions.getSortedFiles(directory)
@@ -29,6 +94,7 @@ ipcMain.handle("next", async (event, videoFile: string) => {
 })
 
 ipcMain.handle("previous", async (event, videoFile: string) => {
+  if (videoFile.startsWith("http")) return
   if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
   const directory = path.dirname(videoFile)
   const files = await functions.getSortedFiles(directory)
@@ -37,6 +103,11 @@ ipcMain.handle("previous", async (event, videoFile: string) => {
     if (files[index - 1]) return `file:///${directory}/${files[index - 1]}`
   }
   return null
+})
+
+ipcMain.handle("export-dialog", async (event, visible: boolean) => {
+  window?.webContents.send("close-all-dialogs", "export")
+  window?.webContents.send("show-export-dialog", visible)
 })
 
 ipcMain.handle("reverse-dialog", async (event, visible: boolean) => {
@@ -216,9 +287,17 @@ if (!singleLock) {
     window.on("closed", () => {
       window = null
     })
-    globalShortcut.register("Control+Shift+I", () => {
-      window?.webContents.toggleDevTools()
-    })
+    localShortcut.register("Ctrl+S", () => {
+      window?.webContents.send("trigger-download")
+    }, window, {strict: true})
+    localShortcut.register("Ctrl+O", () => {
+      window?.webContents.send("upload-file")
+    }, window, {strict: true})
+    if (process.env.DEVELOPMENT === "true") {
+      globalShortcut.register("Control+Shift+I", () => {
+        window?.webContents.toggleDevTools()
+      })
+    }
   })
 }
 

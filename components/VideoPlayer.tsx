@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from "react"
-import {ipcRenderer} from "electron" 
+import {remote, ipcRenderer} from "electron" 
 import path from "path"
 import Slider from "rc-slider"
 import functions from "../structures/functions"
@@ -42,7 +42,7 @@ import fastForwardButton from "../assets/icons/fastforward.png"
 import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
 import "../styles/videoplayer.less"
 
-const videoExtensions = [".mp4", ".mov", ".avi", ".flv", ".mkv", ".webm"]
+const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
 
 const VideoPlayer: React.FunctionComponent = (props) => {
     const playerRef = useRef(null) as React.RefObject<HTMLDivElement>
@@ -111,6 +111,18 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 event.preventDefault()
                 speedBar.current!.step = "0.01"
             }
+
+            if (event.code === "Space") {
+                play()
+            }
+
+            if (event.key === "ArrowLeft") {
+                rewind()
+            }
+
+            if (event.key === "ArrowRight") {
+                fastforward()
+            }
         }
         const keyUp = (event: KeyboardEvent) => {
             if (!event.shiftKey) {
@@ -118,18 +130,35 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 speedBar.current!.step = "0.5"
             }
         }
+        const wheel = (event: WheelEvent) => {
+            const delta = Math.sign(event.deltaY)
+            volume(state.volume + delta * 0.01)
+        }
+        const openLink = async (event: any, link: string) => {
+            if (link) {
+                let video = link
+                if (link.includes("youtube.com") || link.includes("youtu.be")) {
+                    video = await ipcRenderer.invoke("download-yt-video", link)
+                }
+                upload(video)
+            }
+        }
         initState()
         ipcRenderer.on("open-file", openFile)
         ipcRenderer.on("upload-file", uploadFile)
+        ipcRenderer.on("open-link", openLink)
         window.addEventListener("click", onClick)
         window.addEventListener("keydown", keyDown)
         window.addEventListener("keyup", keyUp)
+        window.addEventListener("wheel", wheel)
         return () => {
             ipcRenderer.removeListener("open-file", openFile)
             ipcRenderer.removeListener("upload-file", uploadFile)
+            ipcRenderer.removeListener("open-link", openLink)
             window.removeEventListener("click", onClick)
             window.removeEventListener("keydown", keyDown)
             window.removeEventListener("keyup", keyUp)
+            window.removeEventListener("wheel", wheel)
             window.clearInterval()
         }
     }, [])
@@ -202,12 +231,17 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 return {...prev, paused: true}
             })
         }
+        const triggerDownload = () => {
+            download()
+        }
         saveState()
         videoRef.current!.addEventListener("timeupdate", timeUpdate)
         videoRef.current!.addEventListener("ended", onEnd)
+        ipcRenderer.on("trigger-download", triggerDownload)
         return () => {
             videoRef.current!.removeEventListener("timeupdate", timeUpdate)
             videoRef.current!.removeEventListener("ended", onEnd)
+            ipcRenderer.removeListener("trigger-download", triggerDownload)
         }
     })
 
@@ -453,6 +487,24 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         const previousFile = await ipcRenderer.invoke("previous", state.forwardSrc)
         if (previousFile) upload(previousFile)
     }
+    
+    const getName = () => {
+        return state.forwardSrc ? path.basename(state.forwardSrc.replace("file:///"), path.extname(state.forwardSrc.replace("file:///"))) : ""
+    }
+
+    const download = async () => {
+        let defaultPath = state.forwardSrc
+        if (defaultPath.startsWith("http")) {
+            let name = path.basename(defaultPath)
+            defaultPath = `${remote.app.getPath("downloads")}/${name}`
+        }
+        let savePath = await ipcRenderer.invoke("save-dialog", defaultPath)
+        if (!savePath) return
+        if (!path.extname(savePath)) savePath += path.extname(defaultPath)
+        ipcRenderer.invoke("export-dialog", true)
+        await ipcRenderer.invoke("export-video", state.forwardSrc, savePath, {reverse: state.reverse, speed: state.speed, preservesPitch: state.preservesPitch, abloop: state.abloop, loopStart: state.loopStart, loopEnd: state.loopEnd, duration: videoRef.current!.duration})
+        ipcRenderer.invoke("export-dialog", false)
+    }
 
     return (
         <main className="video-player" ref={playerRef}>
@@ -465,6 +517,9 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             <video className="video" ref={videoRef}>
                 <track kind="subtitles" src={state.subtitleSrc}></track>
             </video>
+            <div className={state.paused && hover ? "control-title-container visible" : "control-title-container"}>
+                <p className="control-title">{getName()}</p>
+            </div>
             <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                 <div className="control-row">
                     <p className="control-text">{functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
