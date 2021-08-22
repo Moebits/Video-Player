@@ -45,6 +45,7 @@ ipcMain.handle("export-video", async (event, videoFile: string, savePath: string
       window?.webContents.send("export-progress", {...progress, duration})
     })
   })
+  shell.showItemInFolder(savePath)
 })
 
 ipcMain.handle("save-dialog", async (event, defaultPath: string) => {
