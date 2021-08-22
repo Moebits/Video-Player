@@ -10,7 +10,8 @@
 
 .video {
     width: 100vw;
-    height: calc(100vh - @title-bar-height);
+    height: 100vh; // calc(100vh - @title-bar-height);
+    margin-top: -@title-bar-height;
 }
 
 .video-controls {
@@ -52,7 +53,7 @@
     margin-left: 13px;
 }
 
-.next-button {
+.rewind-button {
     width: 25px;
 }
 
@@ -60,12 +61,66 @@
     width: 40px;
 }
 
-.progress-slider.rc-slider {
+.progress-container {
+    display: flex;
+    flex-direction: column;
     width: 80%;
+    margin-right: 20px;
+    margin-left: 20px;
+}
+
+.ab-slider.rc-slider {
+    width: 100%;
     border-radius: 0.2;
     align-items: center;
-    margin-left: 20px;
-    margin-right: 20px;
+    margin-top: 0.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.ab-slider > .rc-slider-rail {
+    height: 0.4rem;
+    background-color: #a84dfd;
+    border-radius: 0.2;
+}
+
+.ab-slider > .rc-slider-track {
+    height: 0.4rem;
+    background-color: #5f4dfd;
+    border-radius: 0.2;
+}
+
+.ab-slider > .rc-slider-handle {
+    border: none;
+    height: 1.7rem;
+    width: 1.7rem;
+    &:active {
+        box-shadow: none;
+        filter: invert(1) hue-rotate(180deg);
+    }
+    &:hover {
+        filter: invert(1) hue-rotate(180deg);
+    }
+}
+
+.rc-slider-handle-dragging.rc-slider-handle-dragging.rc-slider-handle-dragging {
+    box-shadow: none;
+}
+
+.ab-slider > .rc-slider-handle-1 {
+    content: url("../assets/icons/a-button.png");
+    background-color: black;
+}
+
+.ab-slider > .rc-slider-handle-2 {
+    content: url("../assets/icons/b-button.png");
+    background-color: black;
+}
+
+
+.progress-slider.rc-slider {
+    width: 100%;
+    border-radius: 0.2;
+    align-items: center;
 }
 
 .progress-slider > .rc-slider-rail {
@@ -169,4 +224,20 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+}
+
+video::cue {
+    background-color: transparent;
+}
+
+video::-webkit-media-text-track-display {
+    font-family: "Skranji", sans-serif;
+    font-size: 35px;
+    color: var(--subtitle-color);
+    text-shadow: 0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black,0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black,0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black,0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black, 0 0 3px black;
+}
+
+video::-webkit-media-text-track-container {
+    transition: transform 0.7s;
+    transform: var(--subtitle-transform);
 }

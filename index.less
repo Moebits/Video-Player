@@ -1,12 +1,25 @@
 @import "~rc-slider/assets/index.css";
 
-//@import url("https://fonts.googleapis.com/css2?family=Maven+Pro:wght@700&display=swap");
-//@import url("https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap");
-//@import url("https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap");
-//@import url("https://fonts.googleapis.com/css2?family=Skranji&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Maven+Pro:wght@700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Yusei+Magic&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Skranji&display=swap");
 
 :root {
     --selection-color: #fc3476;
+    --bg-color: #48257a;
+    --title-color: #9e31f5;
+    --text-color: black;
+    --version-color: #8f3aff;
+    --version-text: black;
+    --version-reject-color: #9233ff;
+    --version-reject-text: black;
+    --version-accept-color: #b444ff;
+    --version-accept-text: black;
+    --subtitle-color: #c73aff; // #ff3a85;
+    --subtitle-transform: translateY(0);
+    --reverse-color: #8f3aff;
+    --reverse-text: black;
 }
 
 * {
@@ -18,7 +31,7 @@
 }
 
 html, body {
-    background-color: #090409;
+    background-color: var(--bg-color);
     overflow-x: hidden;  
     overflow-y: hidden;
     height: 100%;
