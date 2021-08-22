@@ -5,6 +5,8 @@ import TitleBar from "./components/TitleBar"
 import VersionDialog from "./components/VersionDialog"
 import VideoPlayer from "./components/VideoPlayer"
 import ReverseDialog from "./components/ReverseDialog"
+import ExportDialog from "./components/ExportDialog"
+import LinkDialog from "./components/LinkDialog"
 import "./index.less"
 
 const App = () => {
@@ -12,7 +14,9 @@ const App = () => {
     <main className="app">
       <TitleBar/>
       <VersionDialog/>
+      <LinkDialog/>
       <ReverseDialog/>
+      <ExportDialog/>
       <VideoPlayer/>
     </main>
   )

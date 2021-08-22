@@ -17,6 +17,10 @@ import darkButton from "../assets/icons/dark.png"
 import darkButtonHover from "../assets/icons/dark-hover.png"
 import lightButton from "../assets/icons/light.png"
 import lightButtonHover from "../assets/icons/light-hover.png"
+import linkButton from "../assets/icons/link.png"
+import linkButtonHover from "../assets/icons/link-hover.png"
+import downloadButton from "../assets/icons/download.png"
+import downloadButtonHover from "../assets/icons/download-hover.png"
 import pack from "../package.json"
 import "../styles/titlebar.less"
 
@@ -28,6 +32,8 @@ const TitleBar: React.FunctionComponent = (props) => {
     const [hoverStar, setHoverStar] = useState(false)
     const [hoverUpload, setHoverUpload] = useState(false)
     const [hoverTheme, setHoverTheme] = useState(false)
+    const [hoverLink, setHoverLink] = useState(false)
+    const [hoverDownload, setHoverDownload] = useState(false)
     const [theme, setTheme] = useState("light")
 
     useEffect(() => {
@@ -68,34 +74,38 @@ const TitleBar: React.FunctionComponent = (props) => {
         ipcRenderer.invoke("upload-file", false)
     }
 
+    const link = () => {
+        ipcRenderer.invoke("show-link-dialog")
+    }
+
+    const download = () => {
+        ipcRenderer.invoke("trigger-download")
+    }
+
     const changeTheme = (value?: string) => {
         let condition = value !== undefined ? value === "dark" : theme === "light"
         if (condition) {
             document.documentElement.style.setProperty("--bg-color", "#090409")
             document.documentElement.style.setProperty("--title-color", "#090409")
             document.documentElement.style.setProperty("--text-color", "#9e31f5")
-            document.documentElement.style.setProperty("--version-color", "#090409")
-            document.documentElement.style.setProperty("--version-text", "#8f3aff")
+            document.documentElement.style.setProperty("--dialog-color", "#090409")
+            document.documentElement.style.setProperty("--dialog-text", "#8f3aff")
             document.documentElement.style.setProperty("--version-reject-color", "#090409")
             document.documentElement.style.setProperty("--version-reject-text", "#9233ff")
             document.documentElement.style.setProperty("--version-accept-color", "#090409")
             document.documentElement.style.setProperty("--version-accept-text", "#b444ff")
-            document.documentElement.style.setProperty("--version-color", "#090409")
-            document.documentElement.style.setProperty("--version-text", "#8f3aff")
             setTheme("dark")
             ipcRenderer.invoke("save-theme", "dark")
         } else {
             document.documentElement.style.setProperty("--bg-color", "#48257a")
             document.documentElement.style.setProperty("--title-color", "#9e31f5")
             document.documentElement.style.setProperty("--text-color", "black")
-            document.documentElement.style.setProperty("--version-color", "#8f3aff")
-            document.documentElement.style.setProperty("--version-text", "black")
+            document.documentElement.style.setProperty("--dialog-color", "#8f3aff")
+            document.documentElement.style.setProperty("--dialog-text", "black")
             document.documentElement.style.setProperty("--version-reject-color", "#9233ff")
             document.documentElement.style.setProperty("--version-reject-text", "black")
             document.documentElement.style.setProperty("--version-accept-color", "#b444ff")
             document.documentElement.style.setProperty("--version-accept-text", "black")
-            document.documentElement.style.setProperty("--reverse-color", "#8f3aff")
-            document.documentElement.style.setProperty("--reverse-text", "black")
             setTheme("light")
             ipcRenderer.invoke("save-theme", "light")
         }
@@ -110,6 +120,8 @@ const TitleBar: React.FunctionComponent = (props) => {
                     </div>
                     <div className="title-bar-buttons">
                         <img src={hoverTheme ? (theme === "light" ? darkButtonHover : lightButtonHover) : (theme === "light" ? darkButton : lightButton)} height="20" width="20" className="title-bar-button theme-button" onClick={() => changeTheme()} onMouseEnter={() => setHoverTheme(true)} onMouseLeave={() => setHoverTheme(false)}/>
+                        <img src={hoverDownload ? downloadButtonHover : downloadButton} height="20" width="20" className="title-bar-button download-button" onClick={download} onMouseEnter={() => setHoverDownload(true)} onMouseLeave={() => setHoverDownload(false)}/>
+                        <img src={hoverLink ? linkButtonHover : linkButton} height="20" width="20" className="title-bar-button link-button" onClick={link} onMouseEnter={() => setHoverLink(true)} onMouseLeave={() => setHoverLink(false)}/>
                         <img src={hoverUpload ? uploadButtonHover : uploadButton} height="20" width="20" className="title-bar-button upload-button" onClick={upload} onMouseEnter={() => setHoverUpload(true)} onMouseLeave={() => setHoverUpload(false)}/>
                         <img src={hoverStar ? starButtonHover : starButton} height="20" width="20" className="title-bar-button star-button" onClick={star} onMouseEnter={() => setHoverStar(true)} onMouseLeave={() => setHoverStar(false)}/>
                         <img src={hoverReload ? updateButtonHover : updateButton} height="20" width="20" className="title-bar-button update-button" onClick={update} onMouseEnter={() => setHoverReload(true)} onMouseLeave={() => setHoverReload(false)}/>

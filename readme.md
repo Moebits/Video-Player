@@ -5,17 +5,13 @@
 This is a video player that can apply reversing and time stretching effects.
 
 ### Features:
-- Play videos
+- Play local videos, links, and YouTube videos
 - Adjust the volume of the video
 - Reversing effect
 - Time stretching (can preserve or affect the pitch)
 - Looping from point A to point B
 - Enter full-screen mode
-
-### WIP:
-- Play links and YouTube videos
-- Play DVD's
-- Export videos
+- Export videos with applied effects
 
 ### Installation
 

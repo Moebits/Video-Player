@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-const videoExtensions = [".mp4", ".mov", ".avi", ".flv", ".mkv", ".webm"]
+const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
 
 export default class Functions {
     public static arrayIncludes = (str: string, arr: string[]) => {
@@ -47,6 +47,22 @@ export default class Functions {
         if (adjusted > 0) adjusted = 0
         return adjusted
       }
+
+      public static parseSeconds = (str: string) => {
+        const split = str.split(":")
+        let seconds = 0
+        if (split.length === 3) {
+            seconds += Number(split[0]) * 3600
+            seconds += Number(split[1]) * 60
+            seconds += Number(split[2])
+        } else if (split.length === 2) {
+            seconds += Number(split[0]) * 60
+            seconds += Number(split[1])
+        } else if (split.length === 1) {
+            seconds += Number(split[0])
+        }
+        return seconds
+    }
 
     public static formatSeconds = (duration: number) => {
         let seconds = Math.floor(duration % 60) as any
