@@ -515,12 +515,15 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         if (!savePath) return
         if (!path.extname(savePath)) savePath += path.extname(defaultPath)
         videoRef.current?.pause()
+        const src = videoRef.current!.src
+        videoRef.current!.src = ""
         setState((prev) => {
             return {...prev, paused: true}
         })
         ipcRenderer.invoke("export-dialog", true)
         await ipcRenderer.invoke("export-video", state.forwardSrc, savePath, {reverse: state.reverse, speed: state.speed, preservesPitch: state.preservesPitch, abloop: state.abloop, loopStart: state.loopStart, loopEnd: state.loopEnd, duration: videoRef.current!.duration})
         ipcRenderer.invoke("export-dialog", false)
+        videoRef.current!.src = src
         videoRef.current!.play()
         setState((prev) => {
             return {...prev, paused: false}
