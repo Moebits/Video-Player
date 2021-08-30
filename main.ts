@@ -34,10 +34,13 @@ ipcMain.handle("export-video", async (event, videoFile: string, savePath: string
     segment = ["-ss", `${reverse ? functions.formatSeconds(end) : functions.formatSeconds(start)}`, "-to", `${reverse ? functions.formatSeconds(start) : functions.formatSeconds(end)}`]
     duration = reverse ? start - end : end - start
   }
+  const tempDir = `${path.dirname(savePath)}/temp`
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, {recursive: true})
+  const tempDest = `${tempDir}/temp${path.extname(savePath)}`
   await new Promise<void>((resolve) => {
     ffmpeg(videoFile)
     .outputOptions([...baseFlags, ...segment, ...filter])
-    .save(savePath)
+    .save(tempDest)
     .on("end", () => {
         resolve()
     })
@@ -45,6 +48,8 @@ ipcMain.handle("export-video", async (event, videoFile: string, savePath: string
       window?.webContents.send("export-progress", {...progress, duration})
     })
   })
+  fs.renameSync(tempDest, savePath)
+  functions.removeDirectory(tempDir)
   shell.showItemInFolder(savePath)
 })
 
