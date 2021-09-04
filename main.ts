@@ -48,6 +48,7 @@ ipcMain.handle("export-video", async (event, videoFile: string, savePath: string
       window?.webContents.send("export-progress", {...progress, duration})
     })
   })
+  fs.unlinkSync(savePath)
   fs.renameSync(tempDest, savePath)
   functions.removeDirectory(tempDir)
   shell.showItemInFolder(savePath)
