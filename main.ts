@@ -29,6 +29,7 @@ ipcMain.handle("mov-to-mp4", async (event, videoFile: string) => {
   const ext = path.extname(videoFile)
   const name = path.basename(videoFile, ext)
   const savePath = path.join(app.getAppPath(), `../assets/videos/${name}.mp4`)
+  if (!fs.existsSync(path.dirname(savePath))) fs.mkdirSync(path.dirname(savePath), {recursive: true})
   if (fs.existsSync(savePath)) return savePath
   await new Promise<void>((resolve) => {
     ffmpeg(videoFile)
