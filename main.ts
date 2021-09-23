@@ -20,6 +20,24 @@ autoUpdater.autoDownload = false
 const store = new Store()
 const youtube = new Youtube()
 
+ipcMain.handle("mov-to-mp4", async (event, videoFile: string) => {
+  const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+  const ext = path.extname(videoFile)
+  const name = path.basename(videoFile, ext)
+  const savePath = path.join(app.getAppPath(), `../assets/videos/${name}.mp4`)
+  console.log(savePath)
+  if (fs.existsSync(savePath)) return savePath
+  await new Promise<void>((resolve) => {
+    ffmpeg(videoFile)
+    .outputOptions([...baseFlags, "-vcodec", "libx264", "-acodec", "copy"])
+    .save(savePath)
+    .on("end", () => {
+        resolve()
+    })
+  })
+  return savePath
+}) 
+
 ipcMain.handle("export-video", async (event, videoFile: string, savePath: string, options: any) => {
   let {reverse, speed, preservesPitch, abloop, loopStart, loopEnd, duration} = options
   if (videoFile.startsWith("file:///")) videoFile = videoFile.replace("file:///", "")
