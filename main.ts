@@ -1,5 +1,7 @@
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain, shell} from "electron"
 import {autoUpdater} from "electron-updater"
+import util from "util"
+import child_process from "child_process"
 import Store from "electron-store"
 import * as localShortcut from "electron-shortcuts"
 import path from "path"
@@ -10,6 +12,8 @@ import pack from "./package.json"
 import fs from "fs"
 import functions from "./structures/functions"
 import Youtube from "youtube.ts"
+
+const exec = util.promisify(child_process.exec)
 
 process.setMaxListeners(0)
 let window: Electron.BrowserWindow | null
@@ -25,11 +29,10 @@ ipcMain.handle("mov-to-mp4", async (event, videoFile: string) => {
   const ext = path.extname(videoFile)
   const name = path.basename(videoFile, ext)
   const savePath = path.join(app.getAppPath(), `../assets/videos/${name}.mp4`)
-  console.log(savePath)
   if (fs.existsSync(savePath)) return savePath
   await new Promise<void>((resolve) => {
     ffmpeg(videoFile)
-    .outputOptions([...baseFlags, "-vcodec", "libx264", "-acodec", "copy"])
+    .outputOptions([...baseFlags, "-vcodec", "libx264", "-preset", "ultrafast", "-crf", "16", "-acodec", "copy"])
     .save(savePath)
     .on("end", () => {
         resolve()
