@@ -268,6 +268,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         if (!file) file = await ipcRenderer.invoke("select-file")
         if (!file) return
         if (!videoExtensions.includes(path.extname(file))) return
+        if (path.extname(file) === ".mov") file = await ipcRenderer.invoke("mov-to-mp4", file) as string
+        console.log(file)
         videoRef.current!.src = file
         videoRef.current!.currentTime = 0
         videoRef.current!.play()
