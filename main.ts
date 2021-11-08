@@ -13,11 +13,13 @@ import fs from "fs"
 import functions from "./structures/functions"
 import Youtube from "youtube.ts"
 
-const exec = util.promisify(child_process.exec)
+require("@electron/remote/main").initialize()
 
 process.setMaxListeners(0)
 let window: Electron.BrowserWindow | null
-let ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg.exe") as any
+let ffmpegPath = undefined as any
+if (process.platform === "darwin") ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg.app")
+if (process.platform === "win32") ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg.exe")
 if (!fs.existsSync(ffmpegPath)) ffmpegPath = undefined
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
@@ -312,6 +314,8 @@ if (!singleLock) {
     window.loadFile(path.join(__dirname, "index.html"))
     window.removeMenu()
     openFile()
+    require("@electron/remote/main").enable(window.webContents)
+    fs.chmodSync(ffmpegPath, "777")
     window.on("closed", () => {
       window = null
     })
