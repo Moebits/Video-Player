@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from "react"
-import {remote, ipcRenderer} from "electron" 
+import {ipcRenderer} from "electron" 
+import {app} from "@electron/remote"
 import path from "path"
 import Slider from "rc-slider"
 import functions from "../structures/functions"
@@ -511,7 +512,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         let defaultPath = state.forwardSrc
         if (defaultPath.startsWith("http")) {
             let name = path.basename(defaultPath)
-            defaultPath = `${remote.app.getPath("downloads")}/${name}`
+            defaultPath = `${app.getPath("downloads")}/${name}`
         }
         let savePath = await ipcRenderer.invoke("save-dialog", defaultPath)
         if (!savePath) return
