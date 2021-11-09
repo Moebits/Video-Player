@@ -136,6 +136,8 @@ export default class Functions {
     public static constrainDimensions = (width: number, height: number) => {
         const maxWidth = 1450
         const maxHeight = 942
+        const minWidth = 520
+        const minHeight = 250
         let newWidth = width
         let newHeight = height
         if (width > maxWidth) {
@@ -147,6 +149,16 @@ export default class Functions {
             const scale = height / maxHeight
             newHeight /= scale
             newWidth /= scale
+        }
+        if (minWidth > width) {
+            const scale = minWidth / width
+            newWidth *= scale
+            newHeight *= scale
+        }
+        if (minHeight > height) {
+            const scale = minHeight / height
+            newHeight *= scale
+            newWidth *= scale
         }
         return {width: Math.floor(newWidth), height: Math.floor(newHeight)}
     }
