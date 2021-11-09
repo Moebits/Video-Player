@@ -1,6 +1,6 @@
 {
   "name": "video-player",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A video player with reversing and time stretching effects",
   "main": "dist/main.js",
   "scripts": {
@@ -108,7 +108,7 @@
     "cross-env": "^7.0.3",
     "css-loader": "^5.0.1",
     "del-cli": "^3.0.1",
-    "electron": "^15.3.0",
+    "electron": "^14.0.0",
     "electron-builder": "^22.13.1",
     "file-loader": "^6.2.0",
     "fork-ts-checker-webpack-plugin": "^6.1.0",
@@ -130,12 +130,12 @@
     "electron-shortcuts": "^0.4.0",
     "electron-store": "^8.0.0",
     "electron-updater": "^4.3.5",
-    "ffmpeg-static-electron": "^2.0.3",
     "fluent-ffmpeg": "^2.1.2",
     "rc-slider": "^9.7.1",
     "react": "^17.0.1",
     "react-bootstrap": "^1.4.3",
     "react-dom": "^17.0.1",
+    "react-dropzone": "^11.4.2",
     "youtube.ts": "^0.2.2"
   }
 }

@@ -41,6 +41,7 @@ import rewindButton from "../assets/icons/rewind.png"
 import rewindButtonHover from "../assets/icons/rewind-hover.png"
 import fastForwardButton from "../assets/icons/fastforward.png"
 import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
+import {useDropzone} from "react-dropzone"
 import "../styles/videoplayer.less"
 
 const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
@@ -270,7 +271,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         if (!file) return
         if (!videoExtensions.includes(path.extname(file))) return
         if (path.extname(file) === ".mov") file = await ipcRenderer.invoke("mov-to-mp4", file) as string
-        console.log(file)
         videoRef.current!.src = file
         videoRef.current!.currentTime = 0
         videoRef.current!.play()
@@ -278,6 +278,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             return {...prev, forwardSrc: file, reverseSrc: null, reverse: false, paused: false}
         })
         refreshState()
+        ipcRenderer.invoke("resize-window", file)
         ipcRenderer.invoke("extract-subtitles", file).then((subtitles) => {
             if (subtitles) {
                 setState((prev) => {
@@ -531,8 +532,17 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
     }
 
+    const onDrop = (files: any) => {
+        files = files.map((f: any) => f.path)
+        if (files[0]) {
+            upload(files[0])
+        }
+    }
+
+    const {getRootProps} = useDropzone({onDrop})
+
     return (
-        <main className="video-player" ref={playerRef}>
+        <main className="video-player" ref={playerRef} {...getRootProps()}>
             <div className={hoverBar ? "left-bar visible" : "left-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
                 <img className="bar-button" src={previousHover ? previousButtonHover : previousButton} onClick={() => previous()} onMouseEnter={() => setPreviousHover(true)} onMouseLeave={() => setPreviousHover(false)}/>
             </div>
