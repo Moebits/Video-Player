@@ -1,9 +1,9 @@
 import {app, BrowserWindow, dialog, globalShortcut, ipcMain, shell} from "electron"
 import {autoUpdater} from "electron-updater"
-import util from "util"
-import child_process from "child_process"
 import Store from "electron-store"
 import * as localShortcut from "electron-shortcuts"
+import util from "util"
+import child_process from "child_process"
 import path from "path"
 import ffmpeg from "fluent-ffmpeg"
 import process from "process"
@@ -13,6 +13,7 @@ import fs from "fs"
 import functions from "./structures/functions"
 import Youtube from "youtube.ts"
 
+const exec = util.promisify(child_process.exec)
 require("@electron/remote/main").initialize()
 
 process.setMaxListeners(0)
@@ -25,6 +26,20 @@ if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
 const store = new Store()
 const youtube = new Youtube()
+let filePath = ""
+
+const parseResolution = async (file: string, ffmpegPath?: string) => {
+  let command = `"${ffmpegPath ? ffmpegPath : "ffmpeg"}" -i "${file}"`
+  const str = await exec(command).then((s: any) => s.stdout).catch((e: any) => e.stderr)
+  const dim = str.match(/(?<= )\d+x\d+(?= |,)/)[0].split("x")
+  return {width: Number(dim[0]), height: Number(dim[1])}
+}
+
+ipcMain.handle("resize-window", async (event, videoFile: string) => {
+  const dim = await parseResolution(videoFile, ffmpegPath)
+  const {width, height} = functions.constrainDimensions(dim.width, dim.height)
+  window?.setSize(width, height, true)
+})
 
 ipcMain.handle("mov-to-mp4", async (event, videoFile: string) => {
   const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
@@ -288,13 +303,25 @@ ipcMain.handle("check-for-updates", async (event, startup: boolean) => {
 })
 
 ipcMain.handle("get-opened-file", () => {
-  return process.argv[1]
+  if (process.platform !== "darwin") {
+    return process.argv[1]
+  } else {
+    return filePath
+  }
 })
 
 const openFile = (argv?: any) => {
-  let file = argv ? argv[2] : process.argv[1]
-  window?.webContents.send("open-file", file)
+  if (process.platform !== "darwin") {
+    let file = argv ? argv[2] : process.argv[1]
+    window?.webContents.send("open-file", file)
+  }
 }
+
+app.on("open-file", (event, file) => {
+  filePath = file
+  event.preventDefault()
+  window?.webContents.send("open-file", file)
+})
 
 const singleLock = app.requestSingleInstanceLock()
 
@@ -310,12 +337,12 @@ if (!singleLock) {
   })
 
   app.on("ready", () => {
-    window = new BrowserWindow({width: 900, height: 650, minWidth: 720, minHeight: 450, frame: false, backgroundColor: "#7d47c9", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
+    window = new BrowserWindow({width: 900, height: 650, minWidth: 520, minHeight: 250, frame: false, backgroundColor: "#7d47c9", center: true,  webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
     window.loadFile(path.join(__dirname, "index.html"))
     window.removeMenu()
     openFile()
     require("@electron/remote/main").enable(window.webContents)
-    fs.chmodSync(ffmpegPath, "777")
+    if (ffmpegPath) fs.chmodSync(ffmpegPath, "777")
     window.on("closed", () => {
       window = null
     })

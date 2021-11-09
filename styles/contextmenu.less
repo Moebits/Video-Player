@@ -1,0 +1,31 @@
+@import "../index.less";
+
+.context-menu {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: all;
+}
+
+.context-button {
+    background-color: black;
+    border: none;
+    width: 70px;
+    margin-top: -3px;
+    border: 3px solid #7207ff;
+    color: #6607ff;
+    font-family: "Maven Pro", sans-serif;
+    text-decoration: none;
+    font-size: 15px;
+    text-align: center;
+    &:hover {
+        background-color: #703cff;
+        border: 3px solid white;
+        cursor: pointer;
+        color: white;
+        z-index: 1001;
+    }
+}

@@ -7,6 +7,7 @@ import VideoPlayer from "./components/VideoPlayer"
 import ReverseDialog from "./components/ReverseDialog"
 import ExportDialog from "./components/ExportDialog"
 import LinkDialog from "./components/LinkDialog"
+import ContextMenu from "./components/ContextMenu"
 import "./index.less"
 
 const App = () => {
