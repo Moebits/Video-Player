@@ -9,6 +9,7 @@
 }
 
 .video {
+    -webkit-app-region: drag;
     width: 100vw;
     height: 100vh; // calc(100vh - @title-bar-height);
     margin-top: -@title-bar-height;
@@ -38,6 +39,7 @@
 }
 
 .video-controls {
+    -webkit-app-region: no-drag;
     opacity: 0;
     transition: opacity 0.5s;
     position: absolute;
