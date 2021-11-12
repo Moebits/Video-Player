@@ -428,7 +428,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         if (document.fullscreenElement) {
             document.exitFullscreen()
         } else {
-            playerRef.current!.requestFullscreen()
+            console.log(playerRef)
+            playerRef.current?.requestFullscreen()
         }
     }
 
@@ -542,49 +543,51 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const {getRootProps} = useDropzone({onDrop})
 
     return (
-        <main className="video-player" ref={playerRef} {...getRootProps()}>
-            <div className={hoverBar ? "left-bar visible" : "left-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
-                <img className="bar-button" src={previousHover ? previousButtonHover : previousButton} onClick={() => previous()} onMouseEnter={() => setPreviousHover(true)} onMouseLeave={() => setPreviousHover(false)}/>
-            </div>
-            <div className={hoverBar ? "right-bar visible" : "right-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
-                <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
-            </div>
-            <video className="video" ref={videoRef}>
-                <track kind="subtitles" src={state.subtitleSrc}></track>
-            </video>
-            <div className={state.paused && hover ? "control-title-container visible" : "control-title-container"}>
-                <p className="control-title">{getName()}</p>
-            </div>
-            <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-                <div className="control-row">
-                    <p className="control-text">{functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
-                    <div className="progress-container">
-                        <Slider className="progress-slider" onChange={(value) => seek(value)} min={0} max={100} step={1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
-                        <Slider.Range className="ab-slider" min={0} max={100} value={[state.loopStart, state.loopEnd]} onChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
-                    </div>
-                    <p className="control-text">{functions.formatSeconds(state.duration)}</p>
+        <main className="video-player" {...getRootProps()}>
+            <div className="video-player-container" ref={playerRef}>
+                <div className={hoverBar ? "left-bar visible" : "left-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
+                    <img className="bar-button" src={previousHover ? previousButtonHover : previousButton} onClick={() => previous()} onMouseEnter={() => setPreviousHover(true)} onMouseLeave={() => setPreviousHover(false)}/>
                 </div>
-                <div className="control-row">
-                    <img className="control-button" src={reverseHover ? reverseButtonHover : (state.reverse ? reverseActiveButton : reverseButton)} onClick={() => reverse()} onMouseEnter={() => setReverseHover(true)} onMouseLeave={() => setReverseHover(false)}/>
-                    <div className="speed-popup-container" ref={speedPopup} style={({display: "none"})}>
-                            <div className="speed-popup">
-                                <input type="range" ref={speedBar} onChange={(event) => speed(event.target.value)} min="0.5" max="4" step="0.5" value={state.speed} className="speed-bar"/>
-                                <div className="speed-checkbox-container">
-                                <p className="speed-text">Pitch?</p><input type="checkbox" checked={!state.preservesPitch} onChange={() => preservesPitch()} className="speed-checkbox"/>
+                <div className={hoverBar ? "right-bar visible" : "right-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
+                    <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
+                </div>
+                <video className="video" ref={videoRef}>
+                    <track kind="subtitles" src={state.subtitleSrc}></track>
+                </video>
+                <div className={state.paused && hover ? "control-title-container visible" : "control-title-container"}>
+                    <p className="control-title">{getName()}</p>
+                </div>
+                <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+                    <div className="control-row">
+                        <p className="control-text">{functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
+                        <div className="progress-container">
+                            <Slider className="progress-slider" onChange={(value) => seek(value)} min={0} max={100} step={1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
+                            <Slider.Range className="ab-slider" min={0} max={100} value={[state.loopStart, state.loopEnd]} onChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
+                        </div>
+                        <p className="control-text">{functions.formatSeconds(state.duration)}</p>
+                    </div>
+                    <div className="control-row">
+                        <img className="control-button" src={reverseHover ? reverseButtonHover : (state.reverse ? reverseActiveButton : reverseButton)} onClick={() => reverse()} onMouseEnter={() => setReverseHover(true)} onMouseLeave={() => setReverseHover(false)}/>
+                        <div className="speed-popup-container" ref={speedPopup} style={({display: "none"})}>
+                                <div className="speed-popup">
+                                    <input type="range" ref={speedBar} onChange={(event) => speed(event.target.value)} min="0.5" max="4" step="0.5" value={state.speed} className="speed-bar"/>
+                                    <div className="speed-checkbox-container">
+                                    <p className="speed-text">Pitch?</p><input type="checkbox" checked={!state.preservesPitch} onChange={() => preservesPitch()} className="speed-checkbox"/>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    <img className="control-button" src={speedHover ? speedButtonHover : (state.speed !== 1 ? speedActiveButton : speedButton)} ref={speedImg} onClick={() => speedPopup.current!.style.display === "flex" ? speedPopup.current!.style.display = "none" : speedPopup.current!.style.display = "flex"} onMouseEnter={() => setSpeedHover(true)} onMouseLeave={() => setSpeedHover(false)}/>
-                    <img className="control-button" src={loopHover ? loopButtonHover : (state.loop ? loopActiveButton : loopButton)} onClick={() => loop()} onMouseEnter={() => setLoopHover(true)} onMouseLeave={() => setLoopHover(false)}/>
-                    <img className="control-button" src={abloopHover ? abloopButtonHover : (state.abloop ? abloopActiveButton : abloopButton)} onClick={() => toggleAB()} onMouseEnter={() => setABLoopHover(true)} onMouseLeave={() => setABLoopHover(false)}/>
-                    <img className="control-button" src={resetHover ? resetButtonHover : resetButton} onClick={() => reset()} onMouseEnter={() => setResetHover(true)} onMouseLeave={() => setResetHover(false)}/>
-                    <img className="control-button rewind-button" src={rewindHover ? rewindButtonHover : rewindButton} onClick={() => rewind()} onMouseEnter={() => setRewindHover(true)} onMouseLeave={() => setRewindHover(false)}/>
-                    <img className="control-button play-button" src={playHover ? (state.paused ? playButtonHover : pauseButtonHover) : (state.paused ? playButton : pauseButton)} onClick={() => play()} onMouseEnter={() => setPlayHover(true)} onMouseLeave={() => setPlayHover(false)}/>
-                    <img className="control-button rewind-button" src={fastForwardHover ? fastForwardButtonHover : fastForwardButton} onClick={() => fastforward()} onMouseEnter={() => setFastforwardHover(true)} onMouseLeave={() => setFastforwardHover(false)}/>
-                    <img className="control-button" src={subtitleHover ? subtitleButtonHover : (state.subtitles ? subtitleButtonActive : subtitleButton)} onClick={() => subtitles()} onMouseEnter={() => setSubtitleHover(true)} onMouseLeave={() => setSubtitleHover(false)}/>
-                    <img className="control-button" src={fullscreenHover ? fullscreenButtonHover : fullscreenButton} onClick={() => fullscreen()} onMouseEnter={() => setFullscreenHover(true)} onMouseLeave={() => setFullscreenHover(false)}/>
-                    <img className="control-button" src={volumeIcon()} onClick={() => mute()} onMouseEnter={() => setVolumeHover(true)} onMouseLeave={() => setVolumeHover(false)}/>
-                    <Slider className="volume-slider" onChange={(value) => volume(value)} min={0} max={1} step={0.01} value={state.volume}/>
+                        <img className="control-button" src={speedHover ? speedButtonHover : (state.speed !== 1 ? speedActiveButton : speedButton)} ref={speedImg} onClick={() => speedPopup.current!.style.display === "flex" ? speedPopup.current!.style.display = "none" : speedPopup.current!.style.display = "flex"} onMouseEnter={() => setSpeedHover(true)} onMouseLeave={() => setSpeedHover(false)}/>
+                        <img className="control-button" src={loopHover ? loopButtonHover : (state.loop ? loopActiveButton : loopButton)} onClick={() => loop()} onMouseEnter={() => setLoopHover(true)} onMouseLeave={() => setLoopHover(false)}/>
+                        <img className="control-button" src={abloopHover ? abloopButtonHover : (state.abloop ? abloopActiveButton : abloopButton)} onClick={() => toggleAB()} onMouseEnter={() => setABLoopHover(true)} onMouseLeave={() => setABLoopHover(false)}/>
+                        <img className="control-button" src={resetHover ? resetButtonHover : resetButton} onClick={() => reset()} onMouseEnter={() => setResetHover(true)} onMouseLeave={() => setResetHover(false)}/>
+                        <img className="control-button rewind-button" src={rewindHover ? rewindButtonHover : rewindButton} onClick={() => rewind()} onMouseEnter={() => setRewindHover(true)} onMouseLeave={() => setRewindHover(false)}/>
+                        <img className="control-button play-button" src={playHover ? (state.paused ? playButtonHover : pauseButtonHover) : (state.paused ? playButton : pauseButton)} onClick={() => play()} onMouseEnter={() => setPlayHover(true)} onMouseLeave={() => setPlayHover(false)}/>
+                        <img className="control-button rewind-button" src={fastForwardHover ? fastForwardButtonHover : fastForwardButton} onClick={() => fastforward()} onMouseEnter={() => setFastforwardHover(true)} onMouseLeave={() => setFastforwardHover(false)}/>
+                        <img className="control-button" src={subtitleHover ? subtitleButtonHover : (state.subtitles ? subtitleButtonActive : subtitleButton)} onClick={() => subtitles()} onMouseEnter={() => setSubtitleHover(true)} onMouseLeave={() => setSubtitleHover(false)}/>
+                        <img className="control-button" src={fullscreenHover ? fullscreenButtonHover : fullscreenButton} onClick={() => fullscreen()} onMouseEnter={() => setFullscreenHover(true)} onMouseLeave={() => setFullscreenHover(false)}/>
+                        <img className="control-button" src={volumeIcon()} onClick={() => mute()} onMouseEnter={() => setVolumeHover(true)} onMouseLeave={() => setVolumeHover(false)}/>
+                        <Slider className="volume-slider" onChange={(value) => volume(value)} min={0} max={1} step={0.01} value={state.volume}/>
+                    </div>
                 </div>
             </div>
         </main>
