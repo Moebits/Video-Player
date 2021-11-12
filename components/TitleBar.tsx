@@ -1,6 +1,6 @@
 import {ipcRenderer} from "electron"
 import {getCurrentWindow, shell} from "@electron/remote"
-import React, {useEffect, useState} from "react"
+import React, {useContext, useEffect, useState} from "react"
 import closeButtonHover from "../assets/icons/close-hover.png"
 import closeButton from "../assets/icons/close.png"
 import appIcon from "../assets/icons/logo.png"
@@ -22,10 +22,14 @@ import linkButton from "../assets/icons/link.png"
 import linkButtonHover from "../assets/icons/link-hover.png"
 import downloadButton from "../assets/icons/download.png"
 import downloadButtonHover from "../assets/icons/download-hover.png"
+import transparentButton from "../assets/icons/transparent.png"
+import transparentButtonHover from "../assets/icons/transparent-hover.png"
+import {HoverContext} from "../renderer"
 import pack from "../package.json"
 import "../styles/titlebar.less"
 
 const TitleBar: React.FunctionComponent = (props) => {
+    const {hover, setHover} = useContext(HoverContext)
     const [hoverClose, setHoverClose] = useState(false)
     const [hoverMin, setHoverMin] = useState(false)
     const [hoverMax, setHoverMax] = useState(false)
@@ -35,13 +39,17 @@ const TitleBar: React.FunctionComponent = (props) => {
     const [hoverTheme, setHoverTheme] = useState(false)
     const [hoverLink, setHoverLink] = useState(false)
     const [hoverDownload, setHoverDownload] = useState(false)
+    const [hoverTransparent, setHoverTransparent] = useState(false)
     const [theme, setTheme] = useState("light")
+    const [transparency, setTransparency] = useState(false)
 
     useEffect(() => {
         ipcRenderer.invoke("check-for-updates", true)
         const initTheme = async () => {
             const saved = await ipcRenderer.invoke("get-theme")
+            const savedTransparency = await ipcRenderer.invoke("get-transparency")
             changeTheme(saved)
+            // changeTransparency(savedTransparency)
         }
         initTheme()
     }, [])
@@ -83,37 +91,63 @@ const TitleBar: React.FunctionComponent = (props) => {
         ipcRenderer.invoke("trigger-download")
     }
 
-    const changeTheme = (value?: string) => {
+    const changeTheme = (value?: string, trans?: boolean) => {
         let condition = value !== undefined ? value === "dark" : theme === "light"
+        trans = trans !== undefined ? trans : transparency
         if (condition) {
-            document.documentElement.style.setProperty("--bg-color", "#090409")
-            document.documentElement.style.setProperty("--title-color", "#090409")
-            document.documentElement.style.setProperty("--text-color", "#9e31f5")
-            document.documentElement.style.setProperty("--dialog-color", "#090409")
-            document.documentElement.style.setProperty("--dialog-text", "#8f3aff")
-            document.documentElement.style.setProperty("--version-reject-color", "#090409")
-            document.documentElement.style.setProperty("--version-reject-text", "#9233ff")
-            document.documentElement.style.setProperty("--version-accept-color", "#090409")
-            document.documentElement.style.setProperty("--version-accept-text", "#b444ff")
+            if (!trans) {
+                document.documentElement.style.setProperty("--bg-color", "#090409")
+                document.documentElement.style.setProperty("--title-color", "#090409")
+                document.documentElement.style.setProperty("--text-color", "#9e31f5")
+                document.documentElement.style.setProperty("--dialog-color", "#090409")
+                document.documentElement.style.setProperty("--dialog-text", "#8f3aff")
+                document.documentElement.style.setProperty("--version-reject-color", "#090409")
+                document.documentElement.style.setProperty("--version-reject-text", "#9233ff")
+                document.documentElement.style.setProperty("--version-accept-color", "#090409")
+                document.documentElement.style.setProperty("--version-accept-text", "#b444ff")
+            }
             setTheme("dark")
             ipcRenderer.invoke("save-theme", "dark")
         } else {
-            document.documentElement.style.setProperty("--bg-color", "#48257a")
-            document.documentElement.style.setProperty("--title-color", "#9e31f5")
-            document.documentElement.style.setProperty("--text-color", "black")
-            document.documentElement.style.setProperty("--dialog-color", "#8f3aff")
-            document.documentElement.style.setProperty("--dialog-text", "black")
-            document.documentElement.style.setProperty("--version-reject-color", "#9233ff")
-            document.documentElement.style.setProperty("--version-reject-text", "black")
-            document.documentElement.style.setProperty("--version-accept-color", "#b444ff")
-            document.documentElement.style.setProperty("--version-accept-text", "black")
+            if (!trans) {
+                document.documentElement.style.setProperty("--bg-color", "#48257a")
+                document.documentElement.style.setProperty("--title-color", "#9e31f5")
+                document.documentElement.style.setProperty("--text-color", "black")
+                document.documentElement.style.setProperty("--dialog-color", "#8f3aff")
+                document.documentElement.style.setProperty("--dialog-text", "black")
+                document.documentElement.style.setProperty("--version-reject-color", "#9233ff")
+                document.documentElement.style.setProperty("--version-reject-text", "black")
+                document.documentElement.style.setProperty("--version-accept-color", "#b444ff")
+                document.documentElement.style.setProperty("--version-accept-text", "black")
+            }
             setTheme("light")
             ipcRenderer.invoke("save-theme", "light")
         }
     }
 
+    const changeTransparency = (value?: boolean) => {
+        let condition = value !== undefined ? !value : transparency
+        if (condition) {
+            changeTheme(theme, false)
+            setTransparency(false)
+            ipcRenderer.invoke("save-transparency", false)
+        } else {
+            document.documentElement.style.setProperty("--bg-color", "rgba(0, 0, 0, 0)")
+            document.documentElement.style.setProperty("--title-color", "#090409")
+            document.documentElement.style.setProperty("--text-color", "#9e31f5")
+            document.documentElement.style.setProperty("--dialog-color", "rgba(0, 0, 0, 0)")
+            document.documentElement.style.setProperty("--dialog-text", "#8f3aff")
+            document.documentElement.style.setProperty("--version-reject-color", "rgba(0, 0, 0, 0)")
+            document.documentElement.style.setProperty("--version-reject-text", "#9233ff")
+            document.documentElement.style.setProperty("--version-accept-color", "rgba(0, 0, 0, 0)")
+            document.documentElement.style.setProperty("--version-accept-text", "#b444ff")
+            setTransparency(true)
+            ipcRenderer.invoke("save-transparency", true)
+        }
+    }
+
     return (
-        <section className="title-bar">
+        <section className={hover ? "title-bar visible" : "title-bar"}>
                 <div className="title-bar-drag-area">
                     <div className="title-container">
                         <img className="app-icon" height="22" width="22" src={appIcon}/>

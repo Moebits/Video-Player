@@ -16,11 +16,16 @@ import Youtube from "youtube.ts"
 const exec = util.promisify(child_process.exec)
 require("@electron/remote/main").initialize()
 
+ipcMain.handle("trigger-paste", async (event) => {
+  window?.webContents.send("trigger-paste")
+})
+
 process.setMaxListeners(0)
 let window: Electron.BrowserWindow | null
 let ffmpegPath = undefined as any
 if (process.platform === "darwin") ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg.app")
 if (process.platform === "win32") ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg.exe")
+if (process.platform === "linux") ffmpegPath = path.join(app.getAppPath(), "../../ffmpeg/ffmpeg")
 if (!fs.existsSync(ffmpegPath)) ffmpegPath = undefined
 if (ffmpegPath) ffmpeg.setFfmpegPath(ffmpegPath)
 autoUpdater.autoDownload = false
@@ -277,6 +282,14 @@ ipcMain.handle("select-file", async () => {
   return files.filePaths[0] ? files.filePaths[0] : null
 })
 
+ipcMain.handle("get-transparency", () => {
+  return store.get("transparency", false)
+})
+
+ipcMain.handle("save-transparency", (event, transparency: string) => {
+  store.set("transparency", transparency)
+})
+
 ipcMain.handle("get-theme", () => {
   return store.get("theme", "light")
 })
@@ -287,8 +300,15 @@ ipcMain.handle("save-theme", (event, theme: string) => {
 
 
 ipcMain.handle("install-update", async (event) => {
-  await autoUpdater.downloadUpdate()
-  autoUpdater.quitAndInstall()
+  if (process.platform === "darwin") {
+    const update = await autoUpdater.checkForUpdates()
+    const url = `${pack.repository.url}/releases/download/v${update.updateInfo.version}/${update.updateInfo.files[0].url}`
+    await shell.openExternal(url)
+    app.quit()
+  } else {
+    await autoUpdater.downloadUpdate()
+    autoUpdater.quitAndInstall()
+  }
 })
 
 ipcMain.handle("check-for-updates", async (event, startup: boolean) => {
@@ -337,7 +357,7 @@ if (!singleLock) {
   })
 
   app.on("ready", () => {
-    window = new BrowserWindow({width: 900, height: 650, minWidth: 520, minHeight: 250, frame: false, backgroundColor: "#7d47c9", center: true,  webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
+    window = new BrowserWindow({width: 900, height: 650, minWidth: 520, minHeight: 250, frame: false, backgroundColor: "#7d47c9", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
     window.loadFile(path.join(__dirname, "index.html"))
     window.removeMenu()
     openFile()

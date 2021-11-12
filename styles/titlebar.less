@@ -3,6 +3,8 @@
 @title-bar-height: 30px;
 
 .title-bar {
+    opacity: 0;
+    transition: opacity 0.5s;
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -14,6 +16,10 @@
     background-color: var(--title-color);
     z-index: 1000;
     -webkit-app-region: no-drag;
+}
+
+.visible {
+    opacity: 1;
 }
 
 .title-bar-drag-area {
