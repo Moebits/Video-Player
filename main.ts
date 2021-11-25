@@ -362,7 +362,7 @@ if (!singleLock) {
     window.removeMenu()
     openFile()
     require("@electron/remote/main").enable(window.webContents)
-    if (ffmpegPath) fs.chmodSync(ffmpegPath, "777")
+    if (ffmpegPath && process.platform !== "win32") fs.chmodSync(ffmpegPath, "777")
     window.on("closed", () => {
       window = null
     })
