@@ -5,7 +5,7 @@
 This is a video player that can apply reversing and time stretching effects.
 
 ### Features:
-- Play local videos, links, and YouTube videos
+- Play local videos, links, and YouTube videos (MP4, MKV, MOV, AVI, WEBM, M4V)
 - Adjust the volume of the video
 - Reversing effect
 - Time stretching (can preserve or affect the pitch)

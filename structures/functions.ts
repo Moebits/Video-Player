@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 
-const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
+const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]
 
 export default class Functions {
     public static arrayIncludes = (str: string, arr: string[]) => {
