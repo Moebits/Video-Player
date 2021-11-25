@@ -1,6 +1,6 @@
 {
   "name": "video-player",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A video player with reversing and time stretching effects",
   "main": "dist/main.js",
   "scripts": {
@@ -105,6 +105,10 @@
       {
         "ext": "webm",
         "description": "WEBM File"
+      },
+      {
+        "ext": "m4v",
+        "description": "M4V File"
       }
     ]
   },

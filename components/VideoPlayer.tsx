@@ -44,7 +44,7 @@ import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
 import {useDropzone} from "react-dropzone"
 import "../styles/videoplayer.less"
 
-const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
+const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]
 
 const VideoPlayer: React.FunctionComponent = (props) => {
     const playerRef = useRef(null) as React.RefObject<HTMLDivElement>
