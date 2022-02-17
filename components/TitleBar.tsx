@@ -147,7 +147,7 @@ const TitleBar: React.FunctionComponent = (props) => {
     }
 
     return (
-        <section className={hover ? "title-bar visible" : "title-bar"}>
+        <section className={hover || process.platform === "win32" ? "title-bar visible" : "title-bar"}>
                 <div className="title-bar-drag-area">
                     <div className="title-container">
                         <img className="app-icon" height="22" width="22" src={appIcon}/>
