@@ -643,7 +643,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                     <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
                 </div>
                 {state.audio ? <img className="audio-placeholder" src={placeholder}/> : null}
-                <video className="video" ref={videoRef}>
+                <video className="video" ref={videoRef} style={state.audio ? {display: "none"} : {display: "flex"}}>
                     <track kind="subtitles" src={state.subtitleSrc}></track>
                 </video>
                 <div className={state.paused && hover ? "control-title-container visible" : "control-title-container"}>
