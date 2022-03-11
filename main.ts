@@ -16,6 +16,16 @@ import Youtube from "youtube.ts"
 const exec = util.promisify(child_process.exec)
 require("@electron/remote/main").initialize()
 
+ipcMain.handle("paste-loop", async (event) => {
+  window?.webContents.send("paste-loop")
+})
+
+
+ipcMain.handle("copy-loop", async (event) => {
+  window?.webContents.send("copy-loop")
+})
+
+
 ipcMain.handle("trigger-paste", async (event) => {
   window?.webContents.send("trigger-paste")
 })
@@ -275,7 +285,8 @@ ipcMain.handle("select-file", async () => {
   const files = await dialog.showOpenDialog(window, {
     filters: [
       {name: "All Files", extensions: ["*"]},
-      {name: "Video", extensions: ["mp4", "mkv", "mov", "avi"]}
+      {name: "Video", extensions: ["mp4", "mkv", "mov", "avi"]},
+      {name: "Audio", extensions: ["mp3", "wav", "ogg"]}
     ],
     properties: ["openFile"]
   })

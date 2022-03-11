@@ -42,9 +42,11 @@ import rewindButtonHover from "../assets/icons/rewind-hover.png"
 import fastForwardButton from "../assets/icons/fastforward.png"
 import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
 import {useDropzone} from "react-dropzone"
+import placeholder from "../assets/images/placeholder.png"
 import "../styles/videoplayer.less"
 
 const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]
+const audioExtensions = [".mp3", ".wav", ".ogg"]
 
 const VideoPlayer: React.FunctionComponent = (props) => {
     const playerRef = useRef(null) as React.RefObject<HTMLDivElement>
@@ -84,7 +86,11 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         loop: false,
         abloop: false,
         loopStart: 0,
-        loopEnd: 100
+        loopEnd: 100,
+        savedLoop: [0, 100],
+        dragging: false,
+        dragProgress: 0,
+        audio: false
     }
 
     const [state, setState] = useState(initialState)
@@ -166,23 +172,29 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                     if (state.reverse) {
                         if (current > start || current < end) {
                             videoRef.current.currentTime = end
-                            setState((prev) => {
-                                return {...prev, progress: end}
-                            })
+                            if (!state.dragging) {
+                                setState((prev) => {
+                                    return {...prev, progress: end}
+                                })
+                            }
                         }
                     } else {
                         if (current < start || current > end) {
                             videoRef.current.currentTime = start
-                            setState((prev) => {
-                                return {...prev, progress: start}
-                            })
+                            if (!state.dragging) {
+                                setState((prev) => {
+                                    return {...prev, progress: start}
+                                })
+                            }
                         }
                     }
                 }
             }
-            setState((prev) => {
-                return {...prev, progress, duration}
-            })
+            if (!state.dragging) {
+                setState((prev) => {
+                    return {...prev, progress, duration}
+                })
+            }
         }
         if (state.subtitles) {
             videoRef.current!.textTracks[0].mode = "showing"
@@ -239,10 +251,26 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             const delta = Math.sign(event.deltaY)
             volume(state.volume - delta * 0.05)
         }
+        const copyLoop = () => {
+            if (state.abloop && state.loopEnd) {
+                setState((prev) => {
+                    return {...prev, savedLoop: [state.loopStart, state.loopEnd]}
+                })
+            }
+        }
+        const pasteLoop = () => {
+            if (!state.abloop) toggleAB(true)
+            abloop(state.savedLoop)
+            setState((prev) => {
+                return {...prev, loopStart: state.savedLoop[0], loopEnd: state.savedLoop[1]}
+            })
+        }
         saveState()
         videoRef.current!.addEventListener("timeupdate", timeUpdate)
         videoRef.current!.addEventListener("ended", onEnd)
         ipcRenderer.on("trigger-download", triggerDownload)
+        ipcRenderer.on("copy-loop", copyLoop)
+        ipcRenderer.on("paste-loop", pasteLoop)
         window.addEventListener("keydown", keyDown)
         window.addEventListener("keyup", keyUp)
         window.addEventListener("wheel", wheel)
@@ -250,6 +278,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             videoRef.current!.removeEventListener("timeupdate", timeUpdate)
             videoRef.current!.removeEventListener("ended", onEnd)
             ipcRenderer.removeListener("trigger-download", triggerDownload)
+            ipcRenderer.removeListener("copy-loop", copyLoop)
+            ipcRenderer.removeListener("paste-loop", pasteLoop)
             window.removeEventListener("keydown", keyDown)
             window.removeEventListener("keyup", keyUp)
             window.removeEventListener("wheel", wheel)
@@ -269,7 +299,18 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const upload = async (file?: string) => {
         if (!file) file = await ipcRenderer.invoke("select-file")
         if (!file) return
-        if (!videoExtensions.includes(path.extname(file))) return
+        if (!videoExtensions.includes(path.extname(file)) && !audioExtensions.includes(path.extname(file))) return
+        let sizeImg = file
+        if (audioExtensions.includes(path.extname(file))) {
+            sizeImg = placeholder
+            setState((prev) => {
+                return {...prev, audio: true}
+            })
+        } else {
+            setState((prev) => {
+                return {...prev, audio: false}
+            })
+        }
         if (path.extname(file) === ".mov") file = await ipcRenderer.invoke("mov-to-mp4", file) as string
         videoRef.current!.src = file
         videoRef.current!.currentTime = 0
@@ -278,7 +319,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             return {...prev, forwardSrc: file, reverseSrc: null, reverse: false, paused: false}
         })
         refreshState()
-        ipcRenderer.invoke("resize-window", file)
+        ipcRenderer.invoke("resize-window", sizeImg)
         ipcRenderer.invoke("extract-subtitles", file).then((subtitles) => {
             if (subtitles) {
                 setState((prev) => {
@@ -383,7 +424,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         const progress = state.reverse ? (videoRef.current!.duration / 100) * (100 - position) : (videoRef.current!.duration / 100) * position
         videoRef.current!.currentTime = progress
         setState((prev) => {
-            return {...prev, progress}
+            return {...prev, progress, dragging: false}
         })
     }
 
@@ -428,7 +469,6 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         if (document.fullscreenElement) {
             document.exitFullscreen()
         } else {
-            console.log(playerRef)
             playerRef.current?.requestFullscreen()
         }
     }
@@ -462,8 +502,28 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const abloop = (value: number[]) => {
+        const loopStart = value[0]
+        const loopEnd = value[1]
+        const current = videoRef.current!.currentTime
+        const start = state.reverse ? (videoRef.current!.duration / 100) * (100 - loopStart) : (videoRef.current!.duration / 100) * loopStart
+        const end = state.reverse ? (videoRef.current!.duration / 100) * (100 - loopEnd) : (videoRef.current!.duration / 100) * loopEnd
+        if (state.reverse) {
+            if (current > start || current < end) {
+                videoRef.current!.currentTime = end
+                setState((prev) => {
+                    return {...prev, progress: end}
+                })
+            }
+        } else {
+            if (current < start || current > end) {
+                videoRef.current!.currentTime = start
+                setState((prev) => {
+                    return {...prev, progress: start}
+                })
+            }
+        }
         setState((prev) => {
-            return {...prev, loopStart: value[0], loopEnd: value[1]}
+            return {...prev, loopStart, loopEnd, dragging: false}
         })
     }
 
@@ -533,6 +593,37 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         })
     }
 
+    const updateProgressText = (value: number) => {
+        let percent = value / 100
+        if (state.reverse === true) {
+            const progress = (1-percent) * state.duration
+            setState((prev) => {
+                return {...prev, progress, dragProgress: state.duration - progress}
+            })
+        } else {
+            const progress = percent * state.duration
+            setState((prev) => {
+                return {...prev, progress, dragProgress: progress}
+            })
+        }
+    }
+
+    const updateProgressTextAB = (value: number[]) => {
+        if (state.loopStart === value[0]) {
+            let percent = value[1] / 100
+            const progress = state.reverse ? state.duration - (1-percent) * state.duration : percent * state.duration
+            setState((prev) => {
+                return {...prev, loopStart: value[0], loopEnd: value[1], dragProgress: progress}
+            })
+        } else {
+            let percent = value[0] / 100
+            const progress = state.reverse ? state.duration - (1-percent) * state.duration : percent * state.duration
+            setState((prev) => {
+                return {...prev, loopStart: value[0], loopEnd: value[1], dragProgress: progress}
+            })
+        }
+    }
+
     const onDrop = (files: any) => {
         files = files.map((f: any) => f.path)
         if (files[0]) {
@@ -551,6 +642,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 <div className={hoverBar ? "right-bar visible" : "right-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
                     <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
                 </div>
+                {state.audio ? <img className="audio-placeholder" src={placeholder}/> : null}
                 <video className="video" ref={videoRef}>
                     <track kind="subtitles" src={state.subtitleSrc}></track>
                 </video>
@@ -559,10 +651,10 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 </div>
                 <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                     <div className="control-row">
-                        <p className="control-text">{functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
-                        <div className="progress-container">
-                            <Slider className="progress-slider" onChange={(value) => seek(value)} min={0} max={100} step={1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
-                            <Slider.Range className="ab-slider" min={0} max={100} value={[state.loopStart, state.loopEnd]} onChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
+                        <p className="control-text">{state.dragging ? functions.formatSeconds(state.dragProgress) : functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
+                        <div className="progress-container" onMouseUp={() => setState((prev) => {return {...prev, dragging: false}})}>
+                            <Slider className="progress-slider" onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressText(value)} onAfterChange={(value) => seek(value)} min={0} max={100} step={0.1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
+                            <Slider.Range className="ab-slider" min={0} max={100} step={0.1} value={[state.loopStart, state.loopEnd]} onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressTextAB(value)} onAfterChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
                         </div>
                         <p className="control-text">{functions.formatSeconds(state.duration)}</p>
                     </div>
