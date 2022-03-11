@@ -482,7 +482,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     }
 
     const reset = () => {
-        const {forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume} = state
+        const {forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume, audio} = state
         videoRef.current!.playbackRate = 1
         // @ts-ignore
         videoRef.current!.preservesPitch = true
@@ -491,7 +491,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         videoRef.current!.play()
         setState(initialState)
         setState((prev) => {
-            return {...prev, forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume}
+            return {...prev, forwardSrc, reverseSrc, subtitleSrc, subtitles, volume, prevVolume, audio}
         })
     }
 
