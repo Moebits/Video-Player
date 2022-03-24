@@ -2,7 +2,7 @@ import React, {useEffect, useRef, useState} from "react"
 import {ipcRenderer} from "electron" 
 import {app} from "@electron/remote"
 import path from "path"
-import Slider from "rc-slider"
+import Slider from "react-slider"
 import functions from "../structures/functions"
 import playButton from "../assets/icons/play.png"
 import playButtonHover from "../assets/icons/play-hover.png"
@@ -69,6 +69,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const [fullscreenHover, setFullscreenHover] = useState(false)
     const [nextHover, setNextHover] = useState(false)
     const [previousHover, setPreviousHover] = useState(false)
+    const abSlider = useRef(null) as any
 
     const initialState = {
         forwardSrc: null as any,
@@ -123,6 +124,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 upload(video)
             }
         }
+        abSlider.current.slider.style.display = "none"
         initState()
         ipcRenderer.on("open-file", openFile)
         ipcRenderer.on("upload-file", uploadFile)
@@ -285,6 +287,15 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             window.removeEventListener("wheel", wheel)
         }
     })
+
+    useEffect(() => {
+        if (!abSlider.current) return
+        if (state.abloop) {
+            abSlider.current.slider.style.display = "flex"
+        } else {
+            abSlider.current.slider.style.display = "none"
+        }
+    }, [state.abloop])
 
     const refreshState = () => {
         speed(state.speed)
@@ -653,8 +664,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                     <div className="control-row">
                         <p className="control-text">{state.dragging ? functions.formatSeconds(state.dragProgress) : functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
                         <div className="progress-container" onMouseUp={() => setState((prev) => {return {...prev, dragging: false}})}>
-                            <Slider className="progress-slider" onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressText(value)} onAfterChange={(value) => seek(value)} min={0} max={100} step={0.1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
-                            <Slider.Range className="ab-slider" min={0} max={100} step={0.1} value={[state.loopStart, state.loopEnd]} onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressTextAB(value)} onAfterChange={(value) => abloop(value)} style={({display: `${state.abloop ? "flex" : "none"}`})}/>
+                            <Slider className="progress-slider" trackClassName="progress-slider-track" thumbClassName="progress-slider-thumb" onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressText(value)} onAfterChange={(value) => seek(value)} min={0} max={100} step={0.1} value={state.reverse ? ((1 - state.progress / state.duration) * 100) : (state.progress / state.duration * 100)}/>
+                            <Slider ref={abSlider} className="ab-slider" trackClassName="ab-slider-track" thumbClassName="ab-slider-thumb" min={0} max={100} step={0.1} value={[state.loopStart, state.loopEnd]} onBeforeChange={() => setState((prev) => {return {...prev, dragging: true}})} onChange={(value) => updateProgressTextAB(value)} onAfterChange={(value) => abloop(value)}/>
                         </div>
                         <p className="control-text">{functions.formatSeconds(state.duration)}</p>
                     </div>
@@ -678,7 +689,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                         <img className="control-button" src={subtitleHover ? subtitleButtonHover : (state.subtitles ? subtitleButtonActive : subtitleButton)} onClick={() => subtitles()} onMouseEnter={() => setSubtitleHover(true)} onMouseLeave={() => setSubtitleHover(false)}/>
                         <img className="control-button" src={fullscreenHover ? fullscreenButtonHover : fullscreenButton} onClick={() => fullscreen()} onMouseEnter={() => setFullscreenHover(true)} onMouseLeave={() => setFullscreenHover(false)}/>
                         <img className="control-button" src={volumeIcon()} onClick={() => mute()} onMouseEnter={() => setVolumeHover(true)} onMouseLeave={() => setVolumeHover(false)}/>
-                        <Slider className="volume-slider" onChange={(value) => volume(value)} min={0} max={1} step={0.01} value={state.volume}/>
+                        <Slider className="volume-slider" trackClassName="volume-slider-track" thumbClassName="volume-slider-thumb" onChange={(value) => volume(value)} min={0} max={1} step={0.01} value={state.volume}/>
                     </div>
                 </div>
             </div>
