@@ -64,7 +64,7 @@ ipcMain.handle("mov-to-mp4", async (event, videoFile: string) => {
   if (!fs.existsSync(path.dirname(savePath))) fs.mkdirSync(path.dirname(savePath), {recursive: true})
   if (fs.existsSync(savePath)) return savePath
   await new Promise<void>((resolve) => {
-    ffmpeg(videoFile)
+    ffmpeg(path.normalize(videoFile).replaceAll("\\", "/"))
     .outputOptions([...baseFlags, "-vcodec", "libx264", "-preset", "ultrafast", "-crf", "16", "-acodec", "copy"])
     .save(savePath)
     .on("end", () => {
@@ -92,7 +92,7 @@ ipcMain.handle("export-video", async (event, videoFile: string, savePath: string
   if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, {recursive: true})
   const tempDest = `${tempDir}/temp${path.extname(savePath)}`
   await new Promise<void>((resolve) => {
-    ffmpeg(videoFile)
+    ffmpeg(path.normalize(videoFile).replaceAll("\\", "/"))
     .outputOptions([...baseFlags, ...segment, ...filter])
     .save(tempDest)
     .on("end", () => {
@@ -196,7 +196,7 @@ ipcMain.handle("extract-subtitles", async (event, videoFile) => {
     if (!fs.existsSync(vidDest)) fs.mkdirSync(vidDest, {recursive: true})
     const newDest = path.join(vidDest, `./${name}.vtt`)
     return new Promise<string>((resolve, reject) => {
-        ffmpeg(videoFile)
+        ffmpeg(path.normalize(videoFile).replaceAll("\\", "/"))
         .save(newDest)
         .on("end", () => {
             resolve(newDest)
@@ -208,7 +208,7 @@ ipcMain.handle("extract-subtitles", async (event, videoFile) => {
 const splitVideo = async (videoFile: string, savePath: string) => {
   const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
   await new Promise<void>((resolve) => {
-    ffmpeg(videoFile).outputOptions([...baseFlags, "-acodec", "copy", "-vcodec", "copy", "-f", "segment", "-segment_time", "10", "-reset_timestamps", "1", "-map", "0"])
+    ffmpeg(path.normalize(videoFile).replaceAll("\\", "/")).outputOptions([...baseFlags, "-acodec", "copy", "-vcodec", "copy", "-f", "segment", "-segment_time", "10", "-reset_timestamps", "1", "-map", "0"])
         .save(savePath)
         .on("end", () => {
             resolve()
@@ -228,7 +228,7 @@ const reverseSegments = async (segments: string[], savePath: string) => {
     await Promise.all(queue[i].map(async (f) => {
       counter++
       return new Promise<void>((resolve) => {
-        ffmpeg(f).outputOptions([...baseFlags, "-vf", "reverse", "-af", "areverse"])
+        ffmpeg(path.normalize(f).replaceAll("\\", "/")).outputOptions([...baseFlags, "-vf", "reverse", "-af", "areverse"])
         .save(`${savePath}/${path.basename(f)}`)
         .on("end", () => {
             resolve()
@@ -242,11 +242,11 @@ const reverseSegments = async (segments: string[], savePath: string) => {
 const concatSegments = async (segments: string[], savePath: string) => {
   const baseFlags = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
   const sorted = segments.sort(new Intl.Collator(undefined, {numeric: true, sensitivity: "base"}).compare).reverse()
-  const text = sorted.map((s) => `file '${s}'`).join("\n")
+  const text = sorted.map((s) => `file '${process.platform === "win32" ? "file:" : ""}${s}'`).join("\n")
   const textPath = `${path.dirname(savePath)}/list.txt`
   fs.writeFileSync(textPath, text)
   await new Promise<void>((resolve) => {
-    ffmpeg(textPath)
+    ffmpeg(path.normalize(textPath).replaceAll("\\", "/"))
     .inputOptions(["-f", "concat", "-safe", "0"])
     .outputOptions([...baseFlags, "-c", "copy"])
     .save(savePath)
