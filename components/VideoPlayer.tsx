@@ -653,7 +653,9 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 <div className={hoverBar ? "right-bar visible" : "right-bar"} onMouseEnter={() => setHoverBar(true)} onMouseLeave={() => setHoverBar(false)}>
                     <img className="bar-button" src={nextHover ? nextButtonHover : nextButton} onClick={() => next()} onMouseEnter={() => setNextHover(true)} onMouseLeave={() => setNextHover(false)}/>
                 </div>
+                {/*@ts-ignore*/}
                 {state.audio ? <img className="audio-placeholder" src={placeholder}/> : null}
+                {/*@ts-ignore*/}
                 <video className="video" ref={videoRef} style={state.audio ? {display: "none"} : {display: "flex"}}>
                     <track kind="subtitles" src={state.subtitleSrc}></track>
                 </video>
