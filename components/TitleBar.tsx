@@ -20,6 +20,8 @@ import lightButton from "../assets/icons/light.png"
 import lightButtonHover from "../assets/icons/light-hover.png"
 import linkButton from "../assets/icons/link.png"
 import linkButtonHover from "../assets/icons/link-hover.png"
+import fxButton from "../assets/icons/fx.png"
+import fxButtonHover from "../assets/icons/fx-hover.png"
 import downloadButton from "../assets/icons/download.png"
 import downloadButtonHover from "../assets/icons/download-hover.png"
 import transparentButton from "../assets/icons/transparent.png"
@@ -38,6 +40,7 @@ const TitleBar: React.FunctionComponent = (props) => {
     const [hoverUpload, setHoverUpload] = useState(false)
     const [hoverTheme, setHoverTheme] = useState(false)
     const [hoverLink, setHoverLink] = useState(false)
+    const [hoverFX, setHoverFX] = useState(false)
     const [hoverDownload, setHoverDownload] = useState(false)
     const [hoverTransparent, setHoverTransparent] = useState(false)
     const [theme, setTheme] = useState("light")
@@ -85,6 +88,10 @@ const TitleBar: React.FunctionComponent = (props) => {
 
     const link = () => {
         ipcRenderer.invoke("show-link-dialog")
+    }
+
+    const fx = () => {
+        ipcRenderer.invoke("show-fx-dialog")
     }
 
     const download = () => {
@@ -155,6 +162,7 @@ const TitleBar: React.FunctionComponent = (props) => {
                     </div>
                     <div className="title-bar-buttons">
                         <img src={hoverTheme ? (theme === "light" ? darkButtonHover : lightButtonHover) : (theme === "light" ? darkButton : lightButton)} height="20" width="20" className="title-bar-button theme-button" onClick={() => changeTheme()} onMouseEnter={() => setHoverTheme(true)} onMouseLeave={() => setHoverTheme(false)}/>
+                        <img src={hoverFX ? fxButtonHover : fxButton} height="20" width="20" className="title-bar-button" onClick={fx} onMouseEnter={() => setHoverFX(true)} onMouseLeave={() => setHoverFX(false)}/>
                         <img src={hoverDownload ? downloadButtonHover : downloadButton} height="20" width="20" className="title-bar-button download-button" onClick={download} onMouseEnter={() => setHoverDownload(true)} onMouseLeave={() => setHoverDownload(false)}/>
                         <img src={hoverLink ? linkButtonHover : linkButton} height="20" width="20" className="title-bar-button link-button" onClick={link} onMouseEnter={() => setHoverLink(true)} onMouseLeave={() => setHoverLink(false)}/>
                         <img src={hoverUpload ? uploadButtonHover : uploadButton} height="20" width="20" className="title-bar-button upload-button" onClick={upload} onMouseEnter={() => setHoverUpload(true)} onMouseLeave={() => setHoverUpload(false)}/>

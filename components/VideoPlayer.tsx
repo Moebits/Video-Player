@@ -1,4 +1,6 @@
-import React, {useEffect, useRef, useState} from "react"
+import React, {useEffect, useRef, useState, useContext} from "react"
+import {BrightnessContext, ContrastContext, HueContext, SaturationContext, LightnessContext,
+BlurContext, SharpenContext, PixelateContext} from "../renderer"
 import {ipcRenderer} from "electron" 
 import {app} from "@electron/remote"
 import path from "path"
@@ -54,6 +56,18 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const speedBar = useRef(null) as React.RefObject<HTMLInputElement>
     const speedPopup = useRef(null) as React.RefObject<HTMLDivElement>
     const speedImg = useRef(null) as React.RefObject<HTMLImageElement>
+    const videoFilterRef = useRef(null) as React.RefObject<HTMLDivElement>
+    const videoLightnessRef = useRef(null) as React.RefObject<HTMLImageElement>
+    const videoSharpnessRef = useRef(null) as React.RefObject<HTMLCanvasElement>
+    const videoPixelateRef = useRef(null) as React.RefObject<HTMLCanvasElement>
+    const {brightness, setBrightness} = useContext(BrightnessContext)
+    const {contrast, setContrast} = useContext(ContrastContext)
+    const {hue, setHue} = useContext(HueContext)
+    const {saturation, setSaturation} = useContext(SaturationContext)
+    const {lightness, setLightness} = useContext(LightnessContext)
+    const {pixelate, setPixelate} = useContext(PixelateContext)
+    const {blur, setBlur} = useContext(BlurContext)
+    const {sharpen, setSharpen} = useContext(SharpenContext)
     const [hover, setHover] = useState(false)
     const [hoverBar, setHoverBar] = useState(false)
     const [playHover, setPlayHover] = useState(false)
@@ -69,6 +83,10 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const [fullscreenHover, setFullscreenHover] = useState(false)
     const [nextHover, setNextHover] = useState(false)
     const [previousHover, setPreviousHover] = useState(false)
+    const [backFrame, setBackFrame] = useState(null) as any
+    const [videoLoaded, setVideoLoaded] = useState(false)
+    const [subtitlesLoaded, setSubtitlesLoaded] = useState(false)
+    const [subtitleText, setSubtitleText] = useState("")
     const abSlider = useRef(null) as any
 
     const initialState = {
@@ -297,6 +315,179 @@ const VideoPlayer: React.FunctionComponent = (props) => {
         }
     }, [state.abloop])
 
+    useEffect(() => {
+        const parseVideo = async () => {
+            if (backFrame) return 
+            const thumb = await functions.videoThumbnail(state.forwardSrc)
+            setBackFrame(thumb)
+        }
+        if (videoLoaded) parseVideo()
+    }, [videoLoaded])
+
+    useEffect(() => {
+        const element = videoFilterRef.current
+        let newContrast = contrast
+        const video = videoRef.current
+        const sharpenOverlay = videoSharpnessRef.current
+        const lightnessOverlay = videoLightnessRef.current
+        if (!element || !video || !lightnessOverlay || !sharpenOverlay) return
+        if (sharpen !== 0) {
+            const sharpenOpacity = sharpen / 5
+            newContrast += 25 * sharpenOpacity
+            sharpenOverlay.style.backgroundImage = `url(${video.src})`
+            sharpenOverlay.style.filter = `blur(4px) invert(1) contrast(75%)`
+            sharpenOverlay.style.mixBlendMode = "overlay"
+            sharpenOverlay.style.opacity = `${sharpenOpacity}`
+        } else {
+            sharpenOverlay.style.backgroundImage = "none"
+            sharpenOverlay.style.filter = "none"
+            sharpenOverlay.style.mixBlendMode = "normal"
+            sharpenOverlay.style.opacity = "0"
+        }
+        if (lightness !== 100) {
+            const filter = lightness < 100 ? "brightness(0)" : "brightness(0) invert(1)"
+            lightnessOverlay.style.filter = filter
+            lightnessOverlay.style.opacity = `${Math.abs((lightness - 100) / 100)}`
+        } else {
+            lightnessOverlay.style.filter = "none"
+            lightnessOverlay.style.opacity = "0"
+        }
+        element.style.filter = `brightness(${brightness}%) contrast(${newContrast}%) hue-rotate(${hue - 180}deg) saturate(${saturation}%) blur(${blur}px)`
+    }, [brightness, contrast, hue, saturation, lightness, blur, sharpen])
+
+
+
+    useEffect(() => {
+        let id = 0
+        let timeout = null as any
+        const animationLoop = async () => {
+            if (videoLoaded && videoRef.current) {
+                videoRef.current.style.opacity = "0"
+                videoRef.current.playbackRate = state.speed 
+                const pixelateCanvas = videoPixelateRef.current
+                if (pixelateCanvas) pixelateCanvas.style.opacity = "1"
+                const pixelateCtx = pixelateCanvas?.getContext("2d")
+                const sharpenOverlay = videoSharpnessRef.current
+                let sharpenCtx = sharpenOverlay?.getContext("2d")
+                let frame = videoRef.current
+    
+                const draw = () => {
+                    if (videoRef.current && sharpenOverlay && pixelateCanvas && videoLightnessRef.current) {
+                        const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
+                        sharpenOverlay.width = videoRef.current.clientWidth
+                        sharpenOverlay.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                        pixelateCanvas.width = videoRef.current.clientWidth
+                        pixelateCanvas.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                        videoLightnessRef.current.width = videoRef.current.clientWidth
+                        videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                        const margin = Math.floor((videoRef.current!.clientHeight - (videoRef.current.clientWidth / aspectRatio)) / 4)
+                        pixelateCanvas.style.marginTop = `${margin}px`
+                        sharpenOverlay.style.marginTop = `${margin}px`
+                        videoLightnessRef.current.style.marginTop = `${margin}px`
+                    }
+                    if (sharpenOverlay) {
+                        if (sharpen !== 0) {
+                            const sharpenOpacity = sharpen / 5
+                            sharpenOverlay.style.filter = `blur(4px) invert(1) contrast(75%)`
+                            sharpenOverlay.style.mixBlendMode = "overlay"
+                            sharpenOverlay.style.opacity = `${sharpenOpacity}`
+                            sharpenCtx?.clearRect(0, 0, sharpenOverlay.width, sharpenOverlay.height)
+                            sharpenCtx?.drawImage(frame, 0, 0, sharpenOverlay.width, sharpenOverlay.height)
+                        } else {
+                            sharpenOverlay.style.filter = "none"
+                            sharpenOverlay.style.mixBlendMode = "normal"
+                            sharpenOverlay.style.opacity = "0"
+                        }
+                    }
+                    if (pixelateCanvas) {
+                        if (pixelate !== 1) {
+                            const pixelWidth = pixelateCanvas.width / pixelate
+                            const pixelHeight = pixelateCanvas.height / pixelate
+                            pixelateCtx?.clearRect(0, 0, pixelateCanvas.width, pixelateCanvas.height)
+                            pixelateCtx?.drawImage(frame, 0, 0, pixelWidth, pixelHeight)
+                            const landscape = pixelateCanvas.width >= pixelateCanvas.height
+                            if (landscape) {
+                                pixelateCanvas.style.width = `${pixelateCanvas.width * pixelate}px`
+                                pixelateCanvas.style.height = "auto"
+                            } else {
+                                pixelateCanvas.style.width = "auto"
+                                pixelateCanvas.style.height = `${pixelateCanvas.height * pixelate}px`
+                            }
+                            pixelateCanvas.style.imageRendering = "pixelated"
+                        } else {
+                            pixelateCanvas.style.width = `${pixelateCanvas.width}px`
+                            pixelateCanvas.style.height = `${pixelateCanvas.height}px`
+                            pixelateCanvas.style.imageRendering = "none"
+                            pixelateCtx?.clearRect(0, 0, pixelateCanvas.width, pixelateCanvas.height)
+                            pixelateCtx?.drawImage(frame, 0, 0, pixelateCanvas.width, pixelateCanvas.height)
+                        }
+                    }
+                }
+    
+                const videoLoop = async () => {
+                    draw()
+                    await new Promise<void>((resolve) => {
+                        // @ts-ignore
+                        if (videoRef.current?.requestVideoFrameCallback) {
+                            // @ts-ignore
+                            id = videoRef.current?.requestVideoFrameCallback(() => resolve())
+                        } else {
+                            id = window.requestAnimationFrame(() => resolve())
+                        }
+                    }).then(videoLoop)
+                }
+                videoLoop()
+            }
+        }
+        animationLoop()
+        return () => {
+            clearTimeout(timeout)
+            // @ts-ignore
+            if (videoRef.current?.cancelVideoFrameCallback) {
+                // @ts-ignore
+                videoRef.current?.cancelVideoFrameCallback(id)
+            } else {
+                window.cancelAnimationFrame(id)
+            }
+        }
+    }, [videoLoaded, sharpen, pixelate, lightness, state.speed])
+
+    const resizeOverlay = () => {
+        if (!videoRef.current || !videoSharpnessRef.current || !videoPixelateRef.current || !videoLightnessRef.current) return
+        if (videoRef.current.clientWidth === 0) return
+        const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
+        videoSharpnessRef.current.width = videoRef.current.clientWidth
+        videoSharpnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+        videoPixelateRef.current.width = videoRef.current.clientWidth
+        videoPixelateRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+        videoLightnessRef.current.width = videoRef.current.clientWidth
+        videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+    }
+
+    useEffect(() => {
+        const element = videoRef.current
+        new ResizeObserver(resizeOverlay).observe(element!)
+    }, [])
+
+    useEffect(() => {
+        if (!subtitlesLoaded) return
+        setTimeout(() => {
+            const track = videoRef.current?.textTracks[0]
+            if (!track || !track.cues?.length) return
+            track.mode = "hidden"
+            for (let i = 0; i < track.cues?.length; i++) {
+                const cue = track.cues[i]
+                cue.onenter = () => {
+                    // @ts-ignore
+                    setSubtitleText(functions.cleanHTML(cue.text))
+                }
+                cue.onexit = () => {
+                    setSubtitleText("")
+                }
+            }
+        }, 1000)
+    }, [subtitlesLoaded])
+
     const refreshState = () => {
         speed(state.speed)
         preservesPitch(state.preservesPitch)
@@ -323,6 +514,8 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             })
         }
         if (path.extname(file) === ".mov") file = await ipcRenderer.invoke("mov-to-mp4", file) as string
+        setVideoLoaded(false)
+        setSubtitlesLoaded(false)
         videoRef.current!.src = file
         videoRef.current!.currentTime = 0
         videoRef.current!.play()
@@ -336,6 +529,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 setState((prev) => {
                     return {...prev, subtitleSrc: subtitles}
                 })
+                setSubtitlesLoaded(true)
             } else {
                 setState((prev) => {
                     return {...prev, subtitles: false}
@@ -656,12 +850,22 @@ const VideoPlayer: React.FunctionComponent = (props) => {
                 {/*@ts-ignore*/}
                 {state.audio ? <img className="audio-placeholder" src={placeholder}/> : null}
                 {/*@ts-ignore*/}
-                <video className="video" ref={videoRef} style={state.audio ? {display: "none"} : {display: "flex"}}>
-                    <track kind="subtitles" src={state.subtitleSrc}></track>
-                </video>
+                <div className="video-filters" ref={videoFilterRef}>
+                    <img className="video-lightness-overlay" ref={videoLightnessRef} src={backFrame}/>
+                    <canvas className="video-sharpen-overlay" ref={videoSharpnessRef}></canvas>
+                    <canvas className="video-pixelate-canvas" ref={videoPixelateRef}></canvas>
+                    <video className="video" ref={videoRef} style={state.audio ? {display: "none"} : {display: "flex"}} onLoadedData={() => setVideoLoaded(true)}>
+                        <track kind="subtitles" src={state.subtitleSrc}></track>
+                    </video>
+                </div>
                 <div className={state.paused && hover ? "control-title-container visible" : "control-title-container"}>
                     <p className="control-title">{getName()}</p>
                 </div>
+                {state.subtitles ?
+                <div className="video-subtitle-container" style={{bottom: hover ? "100px" : "20px"}}>
+                    <p className="video-subtitles">{subtitleText}</p>
+                </div> 
+                : null}
                 <div className={hover ? "video-controls visible" : "video-controls"} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
                     <div className="control-row">
                         <p className="control-text">{state.dragging ? functions.formatSeconds(state.dragProgress) : functions.formatSeconds(state.reverse ? state.duration - state.progress : state.progress)}</p>
