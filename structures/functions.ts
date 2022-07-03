@@ -95,6 +95,10 @@ export default class Functions {
         })
     }
 
+    public static cleanHTML = (str: string) => {
+        return Functions.decodeEntities(str).replace(/<\/?[^>]+(>|$)/g, "")
+    }
+
     public static round = (value: number, step?: number) => {
         if (!step) step = 1.0
         const inverse = 1.0 / step
@@ -161,5 +165,24 @@ export default class Functions {
             newWidth *= scale
         }
         return {width: Math.floor(newWidth), height: Math.floor(newHeight)}
+    }
+
+    public static videoThumbnail = (link: string) => {
+        return new Promise<string>((resolve) => {
+            const video = document.createElement("video")
+            video.src = link 
+            video.addEventListener("loadeddata", (event) => {
+                video.currentTime = 0.001
+            })
+            video.addEventListener("seeked", () => {
+                const canvas = document.createElement("canvas")
+                const ctx = canvas.getContext("2d") as any
+                canvas.width = video.videoWidth 
+                canvas.height = video.videoHeight
+                ctx?.drawImage(video, 0, 0, canvas.width, canvas.height)
+                resolve(canvas.toDataURL())
+            })
+            video.load()
+        })
     }
 }

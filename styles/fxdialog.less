@@ -1,0 +1,121 @@
+@import "../index.less";
+@import "./titlebar.less";
+
+.fx-dialog {
+    position: fixed;
+    z-index: 701;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding-top: @title-bar-height;
+}
+
+.fx-dropdown {
+    position: absolute;
+    z-index: 850;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(33, 11, 53, 0.55);
+    transform-origin: top;
+    transition: all 0.3s;
+}
+
+
+.hide-fx-dropdown {
+    transform-origin: top;
+    transform: scaleY(0);
+}
+
+.fx-dropdown-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 5px;
+    &:hover {
+        filter: brightness(140%);
+    }
+}
+
+.fx-dropdown-img {
+    width: auto;
+    height: 20px;
+}
+
+.fx-dropdown-text {
+    margin-right: 5px;
+    font-family: Tahoma, sans-serif;
+    font-size: 16px;
+    margin-left: 5px;
+    color: #8135fc;
+}
+
+.fx-slider {
+    display: flex;
+    width: 140px;
+    height: 100%;
+    margin-left: 10px;
+    margin-right: 10px;
+    align-items: center;
+}
+
+.fx-slider-track {
+    display: flex;
+    height: 9px;
+    background-color: #8011ff;
+}
+
+.fx-slider-track.fx-slider-track-1 {
+    background-color: #1e0a30;
+}
+
+.fx-slider-thumb {
+    opacity: 0;
+    display: flex;
+    margin-top: -1px;
+    border-radius: 10;
+    height: 8px;
+    width: 8px;
+    background-color: #6c11ff;
+    &:active {
+        outline: none;
+    }
+    &:focus {
+        outline: none;
+    }
+}
+
+.fx-row {
+    justify-content: space-between;
+    cursor: default;
+    &:last-child {
+        justify-content: center;
+    }
+}
+
+.fx-button {
+    background-color: #6c11ff;
+    color: black;
+    border: 1px solid black;
+    font-family: Tahoma, sans-serif;
+    font-weight: bold;
+    font-size: 15px;
+    padding: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+    margin-top: -5px;
+    margin-bottom: 3px;
+    &:hover {
+        border: 1px solid #ffc9f6;
+        color: #ffc8f6;
+    }
+}

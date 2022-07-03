@@ -136,6 +136,11 @@ ipcMain.handle("open-link", async (event, link: string) => {
   window?.webContents.send("open-link", link)
 })
 
+ipcMain.handle("show-fx-dialog", async (event) => {
+  window?.webContents.send("close-all-dialogs", "fx")
+  window?.webContents.send("show-fx-dialog")
+})
+
 ipcMain.handle("show-link-dialog", async (event) => {
   window?.webContents.send("close-all-dialogs", "link")
   window?.webContents.send("show-link-dialog")
