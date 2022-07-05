@@ -10,6 +10,7 @@ This is a video player that can apply reversing and time stretching effects.
 - Adjust the volume of the video
 - Reversing effect
 - Time stretching (can preserve or affect the pitch)
+- Apply video filters (brightness, contrast, saturation, pixelate, etc).
 - Looping from point A to point B
 - Enter full-screen mode
 - Export videos with applied effects
