@@ -373,17 +373,38 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     
                 const draw = () => {
                     if (videoRef.current && sharpenOverlay && pixelateCanvas && videoLightnessRef.current) {
-                        const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
-                        sharpenOverlay.width = videoRef.current.clientWidth
-                        sharpenOverlay.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
-                        pixelateCanvas.width = videoRef.current.clientWidth
-                        pixelateCanvas.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
-                        videoLightnessRef.current.width = videoRef.current.clientWidth
-                        videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
-                        const margin = Math.floor((videoRef.current!.clientHeight - (videoRef.current.clientWidth / aspectRatio)) / 4)
-                        pixelateCanvas.style.marginTop = `${margin}px`
-                        sharpenOverlay.style.marginTop = `${margin}px`
-                        videoLightnessRef.current.style.marginTop = `${margin}px`
+                        const landscape = videoRef.current.videoWidth > videoRef.current.videoHeight
+                        if (landscape) {
+                            const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
+                            videoSharpnessRef.current.width = videoRef.current.clientWidth
+                            videoSharpnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                            videoPixelateRef.current.width = videoRef.current.clientWidth
+                            videoPixelateRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                            videoLightnessRef.current.width = videoRef.current.clientWidth
+                            videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+                            const margin = Math.floor((videoRef.current!.clientHeight - (videoRef.current.clientWidth / aspectRatio)) / 4)
+                            pixelateCanvas.style.marginTop = `${margin}px`
+                            sharpenOverlay.style.marginTop = `${margin}px`
+                            videoLightnessRef.current.style.marginTop = `${margin}px`
+                            pixelateCanvas.style.marginLeft = "0px"
+                            sharpenOverlay.style.marginLeft = "0px"
+                            videoLightnessRef.current.style.marginLeft = "0px"
+                        } else {
+                            const aspectRatio = videoRef.current.videoHeight / videoRef.current.videoWidth
+                            videoSharpnessRef.current.height = videoRef.current.clientHeight
+                            videoSharpnessRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+                            videoPixelateRef.current.height = videoRef.current.clientHeight
+                            videoPixelateRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+                            videoLightnessRef.current.height = videoRef.current.clientHeight
+                            videoLightnessRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+                            const margin = Math.floor((videoRef.current!.clientWidth - (videoRef.current.clientHeight / aspectRatio)) / 2)
+                            pixelateCanvas.style.marginLeft = `${margin}px`
+                            sharpenOverlay.style.marginLeft = `${margin}px`
+                            videoLightnessRef.current.style.marginLeft = `${margin}px`
+                            pixelateCanvas.style.marginTop = "0px"
+                            sharpenOverlay.style.marginTop = "0px"
+                            videoLightnessRef.current.style.marginTop = "0px"
+                        }
                     }
                     if (sharpenOverlay) {
                         if (sharpen !== 0) {
@@ -455,13 +476,24 @@ const VideoPlayer: React.FunctionComponent = (props) => {
     const resizeOverlay = () => {
         if (!videoRef.current || !videoSharpnessRef.current || !videoPixelateRef.current || !videoLightnessRef.current) return
         if (videoRef.current.clientWidth === 0) return
-        const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
-        videoSharpnessRef.current.width = videoRef.current.clientWidth
-        videoSharpnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
-        videoPixelateRef.current.width = videoRef.current.clientWidth
-        videoPixelateRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
-        videoLightnessRef.current.width = videoRef.current.clientWidth
-        videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+        const landscape = videoRef.current.videoWidth > videoRef.current.videoHeight
+        if (landscape) {
+            const aspectRatio = videoRef.current.videoWidth / videoRef.current.videoHeight
+            videoSharpnessRef.current.width = videoRef.current.clientWidth
+            videoSharpnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+            videoPixelateRef.current.width = videoRef.current.clientWidth
+            videoPixelateRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+            videoLightnessRef.current.width = videoRef.current.clientWidth
+            videoLightnessRef.current.height = Math.floor(videoRef.current.clientWidth / aspectRatio)
+        } else {
+            const aspectRatio = videoRef.current.videoHeight / videoRef.current.videoWidth
+            videoSharpnessRef.current.height = videoRef.current.clientHeight
+            videoSharpnessRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+            videoPixelateRef.current.height = videoRef.current.clientHeight
+            videoPixelateRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+            videoLightnessRef.current.height = videoRef.current.clientHeight
+            videoLightnessRef.current.width = Math.floor(videoRef.current.clientHeight / aspectRatio)
+        }
     }
 
     useEffect(() => {
