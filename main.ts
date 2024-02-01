@@ -44,7 +44,7 @@ const youtube = new Youtube()
 let filePath = ""
 
 const parseResolution = async (file: string, ffmpegPath?: string) => {
-  let command = `"${ffmpegPath ? ffmpegPath : "ffmpeg"}" -i "${file}"`
+  let command = `"${ffmpegPath ? ffmpegPath : "ffmpeg"}" -i "${functions.escapeQuotes(file)}"`
   const str = await exec(command).then((s: any) => s.stdout).catch((e: any) => e.stderr)
   const dim = str.match(/(?<= )\d+x\d+(?= |,)/)[0].split("x")
   return {width: Number(dim[0]), height: Number(dim[1])}

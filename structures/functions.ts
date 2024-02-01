@@ -185,4 +185,8 @@ export default class Functions {
             video.load()
         })
     }
+
+    public static escapeQuotes = (str: string) => {
+        return str.replace(/"/g, `"\\""`).replace(/'/g, `'\\''`)
+    }
 }
