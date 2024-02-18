@@ -29,6 +29,13 @@ This is a video player that can apply reversing and time stretching effects.
 
 Download the latest exe installer from the [releases](https://github.com/Tenpi/Video-Player/releases) tab. Updates can be installed automatically.
 
+### MacOS
+
+On MacOS unsigned applications won't open, run this to remove the quarantine flag.
+```
+xattr -d com.apple.quarantine /Applications/Video\ Player.app
+```
+
 ### Bugs and Requests
 
 Open an issue on my GitHub repository.
