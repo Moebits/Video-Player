@@ -27,7 +27,7 @@ This is a video player that can apply reversing and time stretching effects.
 
 ### Installation
 
-Download the latest exe installer from the [releases](https://github.com/Tenpi/Video-Player/releases) tab. Updates can be installed automatically.
+Download the latest exe installer from the [releases](https://github.com/Moebits/Video-Player/releases) tab. Updates can be installed automatically.
 
 ### MacOS
 
@@ -42,5 +42,5 @@ Open an issue on my GitHub repository.
 
 ### Also See
 
-- [Music Player](https://github.com/Tenpi/Music-Player)
-- [Photo Viewer](https://github.com/Tenpi/Photo-Viewer)
+- [Music Player](https://github.com/Moebits/Music-Player)
+- [Photo Viewer](https://github.com/Moebits/Photo-Viewer)
