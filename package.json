@@ -18,10 +18,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Tenpi/Video-Player"
+    "url": "https://github.com/Moebits/Video-Player"
   },
   "build": {
-    "appId": "com.tenpi.video-player",
+    "appId": "com.moebits.video-player",
     "productName": "Video Player",
     "icon": "./assets/icon.png",
     "directories": {
@@ -82,7 +82,7 @@
     "publish": {
       "provider": "github",
       "repo": "Video-Player",
-      "owner": "Tenpi",
+      "owner": "Moebits",
       "releaseType": "draft"
     },
     "fileAssociations": [
@@ -112,10 +112,9 @@
       }
     ]
   },
-  "author": "Tenpi",
+  "author": "Moebits",
   "license": "MIT",
   "devDependencies": {
-    "@tenpi/tslint": "^1.1.0",
     "@types/fluent-ffmpeg": "^2.1.18",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
