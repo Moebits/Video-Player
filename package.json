@@ -32,7 +32,7 @@
     "mac": {
       "target": {
         "target": "dmg",
-        "arch": "x64"
+        "arch": "arm64"
       },
       "category": "public.app-category.video",
       "extraFiles": [
