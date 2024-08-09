@@ -5,3 +5,4 @@ node_modules
 assets/videos
 assets/dvd
 assets/subtitles
+.DS_Store
