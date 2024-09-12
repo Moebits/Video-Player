@@ -91,6 +91,10 @@
         "description": "MP4 File"
       },
       {
+        "ext": "webm",
+        "description": "WEBM File"
+      },
+      {
         "ext": "mkv",
         "description": "MKV File"
       },
@@ -101,10 +105,6 @@
       {
         "ext": "avi",
         "description": "AVI File"
-      },
-      {
-        "ext": "webm",
-        "description": "WEBM File"
       },
       {
         "ext": "m4v",
@@ -151,6 +151,6 @@
     "react-dom": "^17.0.1",
     "react-dropzone": "^11.4.2",
     "react-slider": "^1.3.1",
-    "youtube.ts": "^0.2.8"
+    "youtube.ts": "^0.3.2"
   }
 }

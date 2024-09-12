@@ -290,7 +290,7 @@ ipcMain.handle("select-file", async () => {
   const files = await dialog.showOpenDialog(window, {
     filters: [
       {name: "All Files", extensions: ["*"]},
-      {name: "Video", extensions: ["mp4", "mkv", "mov", "avi"]},
+      {name: "Video", extensions: ["mp4", "webm", "mkv", "mov", "avi", "m4v"]},
       {name: "Audio", extensions: ["mp3", "wav", "ogg"]}
     ],
     properties: ["openFile"]
@@ -313,7 +313,6 @@ ipcMain.handle("get-theme", () => {
 ipcMain.handle("save-theme", (event, theme: string) => {
   store.set("theme", theme)
 })
-
 
 ipcMain.handle("install-update", async (event) => {
   if (process.platform === "darwin") {
@@ -373,7 +372,7 @@ if (!singleLock) {
   })
 
   app.on("ready", () => {
-    window = new BrowserWindow({width: 900, height: 650, minWidth: 520, minHeight: 250, frame: false, backgroundColor: "#7d47c9", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
+    window = new BrowserWindow({width: 900, height: 650, minWidth: 520, minHeight: 250, roundedCorners: false, transparent: true, hasShadow: false, frame: false, backgroundColor: "#00000000", center: true, webPreferences: {nodeIntegration: true, contextIsolation: false, enableRemoteModule: true, webSecurity: false}})
     window.loadFile(path.join(__dirname, "index.html"))
     window.removeMenu()
     openFile()
