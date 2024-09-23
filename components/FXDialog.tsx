@@ -9,7 +9,7 @@ import lightnessIcon from "../assets/icons/lightness.png"
 import blurIcon from "../assets/icons/blur.png"
 import sharpenIcon from "../assets/icons/sharpen.png"
 import pixelateIcon from "../assets/icons/pixelate.png"
-import "../styles/fxdialog.less"
+import "./styles/fxdialog.less"
 import Slider from "react-slider"
 
 const FXDialog: React.FunctionComponent = (props) => {

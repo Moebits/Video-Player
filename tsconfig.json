@@ -11,7 +11,8 @@
       "strict": true,
       "skipLibCheck": true,
       "strictNullChecks": true,
-      "resolveJsonModule": true
+      "resolveJsonModule": true,
+      "noImplicitAny": false
     },
     "exclude": [
         "node_modules",

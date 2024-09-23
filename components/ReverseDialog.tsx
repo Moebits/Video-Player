@@ -1,6 +1,6 @@
 import {ipcRenderer} from "electron"
 import React, {useEffect, useState} from "react"
-import "../styles/reversedialog.less"
+import "./styles/reversedialog.less"
 
 const ReverseDialog: React.FunctionComponent = (props) => {
     const [visible, setVisible] = useState(false)

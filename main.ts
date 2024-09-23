@@ -51,8 +51,8 @@ const parseResolution = async (file: string, ffmpegPath?: string) => {
 }
 
 ipcMain.handle("resize-window", async (event, videoFile: string) => {
-  const dim = await parseResolution(videoFile, ffmpegPath)
-  const {width, height} = functions.constrainDimensions(dim.width, dim.height)
+  // const dim = await parseResolution(videoFile, ffmpegPath)
+  // const {width, height} = functions.constrainDimensions(dim.width, dim.height)
   // window?.setSize(width, height, true)
 })
 

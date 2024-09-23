@@ -1,7 +1,7 @@
 import {ipcRenderer} from "electron"
 import React, {useEffect, useState} from "react"
 import functions from "../structures/functions"
-import "../styles/exportdialog.less"
+import "./styles/exportdialog.less"
 
 const ExportDialog: React.FunctionComponent = (props) => {
     const [visible, setVisible] = useState(false)

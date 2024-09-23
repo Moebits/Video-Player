@@ -1,5 +1,7 @@
 import fs from "fs"
 import path from "path"
+import MP4Demuxer from "./MP4Demuxer"
+import {JsWebm} from "jswebm"
 
 const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v", ".mp3", ".wav", ".ogg"]
 
@@ -39,14 +41,12 @@ export default class Functions {
     public static logSlider = (position: number) => {
         const minPos = 0
         const maxPos = 1
-        const minValue = Math.log(60)
-        const maxValue = Math.log(100)
+        const minValue = Math.log(0.01)
+        const maxValue = Math.log(1)
         const scale = (maxValue - minValue) / (maxPos - minPos)
         const value = Math.exp(minValue + scale * (position - minPos))
-        let adjusted = value - 100
-        if (adjusted > 0) adjusted = 0
-        return adjusted
-      }
+        return value
+    }
 
       public static parseSeconds = (str: string) => {
         const split = str.split(":")
@@ -188,5 +188,98 @@ export default class Functions {
 
     public static escapeQuotes = (str: string) => {
         return str.replace(/"/g, `"\\""`).replace(/'/g, `'\\''`)
+    }
+
+    public static extractMP4Frames = async (videoFile: string) => {
+        let frames = [] as any
+        await new Promise<void>(async (resolve) => {
+            let demuxer = new MP4Demuxer(videoFile)
+            let timeout: any 
+            // @ts-ignore
+            let decoder = new VideoDecoder({
+                output : (frame: any) => {
+                    clearTimeout(timeout)
+                    const bitmap = createImageBitmap(frame)
+                    frames.push(bitmap)
+                    frame.close()
+                    timeout = setTimeout(() => {
+                        resolve()
+                    }, 500)
+                },
+                error : (e: any) => console.error(e)
+            })
+            const config = await demuxer.getConfig()
+            decoder.configure(config)
+            demuxer.start((chunk: any) => decoder.decode(chunk))
+        })
+        return Promise.all(frames)
+    }
+
+    public static extractWebMFrames = async (videoFile: string, vp9?: boolean) => {
+        let frames = [] as any
+        await new Promise<void>(async (resolve) => {
+            let demuxer = new JsWebm()
+            const arrayBuffer = await fetch(videoFile).then((r) => r.arrayBuffer())
+            demuxer.queueData(arrayBuffer)
+            let timeout: any 
+            // @ts-ignore
+            let decoder = new VideoDecoder({
+                output : (frame: any) => {
+                    clearTimeout(timeout)
+                    const bitmap = createImageBitmap(frame)
+                    frames.push(bitmap)
+                    frame.close()
+                    timeout = setTimeout(() => {
+                        resolve()
+                    }, 500)
+                },
+                error : (e: any) => console.error(e)
+            })
+            while (!demuxer.eof) {
+                demuxer.demux()
+            }
+            decoder.configure({
+                codec: vp9 ? "vp09.00.10.08" : "vp8",
+                codedWidth: demuxer.videoTrack.width,
+                codedHeight: demuxer.videoTrack.height,
+                displayAspectWidth: demuxer.videoTrack.width,
+                displayAspectHeight: demuxer.videoTrack.height,
+                colorSpace: {
+                    primaries: "bt709",
+                    transfer: "bt709",
+                    matrix: "rgb"
+                },
+                hardwareAcceleration: "no-preference",
+                optimizeForLatency: true
+            })
+            let foundKeyframe = false
+            for (let i = 0; i < demuxer.videoPackets.length; i++) {
+                const packet = demuxer.videoPackets[i]
+                if (packet.isKeyframe) foundKeyframe = true 
+                if (!foundKeyframe) continue
+                // @ts-ignore
+                const chunk = new EncodedVideoChunk({type: packet.isKeyframe ? "key" : "delta", data: packet.data, timestamp: packet.timestamp * demuxer.segmentInfo.timecodeScale / 1000})
+                decoder.decode(chunk)
+            }
+        })
+        return Promise.all(frames)
+    }
+
+    public static videoSpeed = (data: any[], speed: number) => {
+        if (speed === 1) return data 
+        const constraint = speed > 1 ? data.length / speed : data.length
+        let step = Math.ceil(data.length / constraint)
+        let newData = [] as any 
+        for (let i = 0; i < data.length; i += step) {
+            const frame = data[i]
+            newData.push(frame)
+            if (speed < 1) {
+                const amount = (1 / speed) - 1 
+                for (let i = 0; i < amount; i++) {
+                    newData.push(frame)
+                }
+            }
+        }
+        return newData
     }
 }

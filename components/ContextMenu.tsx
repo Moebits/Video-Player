@@ -1,6 +1,6 @@
 import {ipcRenderer, clipboard} from "electron"
 import React, {useEffect, useState, useRef} from "react"
-import "../styles/contextmenu.less"
+import "./styles/contextmenu.less"
 
 const ContextMenu: React.FunctionComponent = (props) => {
     const [visible, setVisible] = useState(false)
