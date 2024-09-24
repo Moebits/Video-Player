@@ -45,7 +45,7 @@ import fastForwardButton from "../assets/icons/fastforward.png"
 import fastForwardButtonHover from "../assets/icons/fastforward-hover.png"
 import {useDropzone} from "react-dropzone"
 import placeholder from "../assets/images/placeholder.png"
-import "../styles/videoplayer.less"
+import "./styles/videoplayer.less"
 
 const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]
 const audioExtensions = [".mp3", ".wav", ".ogg"]
@@ -153,7 +153,7 @@ const VideoPlayer: React.FunctionComponent = (props) => {
             ipcRenderer.removeListener("upload-file", uploadFile)
             ipcRenderer.removeListener("open-link", openLink)
             window.removeEventListener("click", onClick)
-            window.clearInterval()
+            window.clearInterval(undefined)
         }
     }, [])
 

@@ -1,7 +1,7 @@
 import {ipcRenderer, clipboard} from "electron"
 import React, {useEffect, useState, useRef} from "react"
 import searchIcon from "../assets/icons/search-icon.png"
-import "../styles/linkdialog.less"
+import "./styles/linkdialog.less"
 
 const LinkDialog: React.FunctionComponent = (props) => {
     const [visible, setVisible] = useState(false)

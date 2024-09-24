@@ -28,7 +28,7 @@ import transparentButton from "../assets/icons/transparent.png"
 import transparentButtonHover from "../assets/icons/transparent-hover.png"
 import {HoverContext} from "../renderer"
 import pack from "../package.json"
-import "../styles/titlebar.less"
+import "./styles/titlebar.less"
 
 const TitleBar: React.FunctionComponent = (props) => {
     const {hover, setHover} = useContext(HoverContext)

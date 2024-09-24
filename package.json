@@ -1,6 +1,6 @@
 {
   "name": "video-player",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "description": "A video player with reversing and time stretching effects",
   "main": "dist/main.js",
   "scripts": {
